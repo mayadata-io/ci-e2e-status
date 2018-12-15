@@ -54,13 +54,13 @@ func awsPipelineJobs(id int, token string) Jobs {
 	return obj
 }
 
-// AwsData from gitlab api for aws and dump to database
-func AwsData(token string) {
+// awsPipeline get pipeline data from gitlab
+func awsPipeline(token string) Pipeline {
 	url := BaseURL + "api/v4/projects/" + PlatformID["aws"] + "/pipelines?ref=master"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 	http.DefaultClient.Timeout = time.Minute * 10
 	req.Close = true
@@ -69,21 +69,23 @@ func AwsData(token string) {
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
 	var obj Pipeline
 	json.Unmarshal(body, &obj)
+	return obj
+}
 
-	for i := range obj {
-		jobsdata := awsPipelineJobs(obj[i].ID, token)
-		if err != nil {
-			fmt.Println(err)
-		}
+// AwsData from gitlab api for aws and dump to database
+func AwsData(token string) {
+	awsObj := awsPipeline(token)
+	for i := range awsObj {
+		jobsdata := awsPipelineJobs(awsObj[i].ID, token)
 		jobStartedAt := jobsdata[0].StartedAt
 		JobFinishedAt := jobsdata[len(jobsdata)-1].FinishedAt
-		logURL := Kibanaloglink(obj[i].Sha, obj[i].ID, obj[i].Status, jobStartedAt, JobFinishedAt)
+		logURL := Kibanaloglink(awsObj[i].Sha, awsObj[i].ID, awsObj[i].Status, jobStartedAt, JobFinishedAt)
 
 		// Add Aws pipelines data to Database
 		sqlStatement := `
@@ -93,7 +95,7 @@ func AwsData(token string) {
 			SET status = $4, kibana_url = $6
 			RETURNING id`
 		id := 0
-		err = database.Db.QueryRow(sqlStatement, obj[i].ID, obj[i].Sha, obj[i].Ref, obj[i].Status, obj[i].WebURL, logURL).Scan(&id)
+		err := database.Db.QueryRow(sqlStatement, awsObj[i].ID, awsObj[i].Sha, awsObj[i].Ref, awsObj[i].Status, awsObj[i].WebURL, logURL).Scan(&id)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -109,7 +111,7 @@ func AwsData(token string) {
 				RETURNING id`
 			id := 0
 			err = database.Db.QueryRow(sqlStatement,
-				obj[i].ID,
+				awsObj[i].ID,
 				jobsdata[j].ID,
 				jobsdata[j].Status,
 				jobsdata[j].Stage,

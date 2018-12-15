@@ -50,13 +50,13 @@ func gcpPipelineJobs(id int, token string) Jobs {
 	return obj
 }
 
-// GcpData from gitlab api for gcp and dump to database
-func GcpData(token string) {
+// gcpPipeline get pipeline data from gitlab
+func gcpPipeline(token string) Pipeline {
 	url := BaseURL + "api/v4/projects/" + PlatformID["gcp"] + "/pipelines?ref=master"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 	req.Close = true
 	req.Header.Set("Connection", "close")
@@ -64,21 +64,23 @@ func GcpData(token string) {
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
 	var obj Pipeline
 	json.Unmarshal(body, &obj)
+	return obj
+}
 
-	for i := range obj {
-		jobsdata := gcpPipelineJobs(obj[i].ID, token)
-		if err != nil {
-			fmt.Println(err)
-		}
+// GcpData from gitlab api for gcp and dump to database
+func GcpData(token string) {
+	gcpObj := gcpPipeline(token)
+	for i := range gcpObj {
+		jobsdata := gcpPipelineJobs(gcpObj[i].ID, token)
 		jobStartedAt := jobsdata[0].StartedAt
 		JobFinishedAt := jobsdata[len(jobsdata)-1].FinishedAt
-		logURL := Kibanaloglink(obj[i].Sha, obj[i].ID, obj[i].Status, jobStartedAt, JobFinishedAt)
+		logURL := Kibanaloglink(gcpObj[i].Sha, gcpObj[i].ID, gcpObj[i].Status, jobStartedAt, JobFinishedAt)
 
 		// Add Gcp pipelines data to Database
 		sqlStatement := `
@@ -88,7 +90,7 @@ func GcpData(token string) {
 			SET status = $4, kibana_url = $6
 			RETURNING id`
 		id := 0
-		err = database.Db.QueryRow(sqlStatement, obj[i].ID, obj[i].Sha, obj[i].Ref, obj[i].Status, obj[i].WebURL, logURL).Scan(&id)
+		err := database.Db.QueryRow(sqlStatement, gcpObj[i].ID, gcpObj[i].Sha, gcpObj[i].Ref, gcpObj[i].Status, gcpObj[i].WebURL, logURL).Scan(&id)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -104,7 +106,7 @@ func GcpData(token string) {
 				RETURNING id`
 			id := 0
 			err = database.Db.QueryRow(sqlStatement,
-				obj[i].ID,
+				gcpObj[i].ID,
 				jobsdata[j].ID,
 				jobsdata[j].Status,
 				jobsdata[j].Stage,

@@ -31,7 +31,7 @@ func Akshandler(w http.ResponseWriter, r *http.Request) {
 
 // aksPipelineJobs will get pipeline jobs details from gitlab api
 func aksPipelineJobs(id int, token string) Jobs {
-	url := BaseURL + "api/v4/projects/2/pipelines/" + strconv.Itoa(id) + "/jobs?per_page=50"
+	url := BaseURL + "api/v4/projects/" + PlatformID["aks"] + "/pipelines/" + strconv.Itoa(id) + "/jobs?per_page=50"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		fmt.Println(err)
@@ -52,13 +52,13 @@ func aksPipelineJobs(id int, token string) Jobs {
 	return obj
 }
 
-// AksData from gitlab api for aks and dump to database
-func AksData(token string) {
-	url := BaseURL + "api/v4/projects/2/pipelines?ref=master"
+// aksPipeline get pipeline data from gitlab
+func aksPipeline(token string) Pipeline {
+	url := BaseURL + "api/v4/projects/" + PlatformID["aks"] + "/pipelines?ref=master"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 	req.Close = true
 	req.Header.Set("Connection", "close")
@@ -66,21 +66,23 @@ func AksData(token string) {
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
 	var obj Pipeline
 	json.Unmarshal(body, &obj)
+	return obj
+}
 
-	for i := range obj {
-		jobsdata := aksPipelineJobs(obj[i].ID, token)
-		if err != nil {
-			fmt.Println(err)
-		}
+// AksData from gitlab api for aks and dump to database
+func AksData(token string) {
+	aksObj := aksPipeline(token)
+	for i := range aksObj {
+		jobsdata := aksPipelineJobs(aksObj[i].ID, token)
 		jobStartedAt := jobsdata[0].StartedAt
 		JobFinishedAt := jobsdata[len(jobsdata)-1].FinishedAt
-		logURL := Kibanaloglink(obj[i].Sha, obj[i].ID, obj[i].Status, jobStartedAt, JobFinishedAt)
+		logURL := Kibanaloglink(aksObj[i].Sha, aksObj[i].ID, aksObj[i].Status, jobStartedAt, JobFinishedAt)
 
 		// Add Aks pipelines data to Database
 		sqlStatement := `
@@ -90,7 +92,7 @@ func AksData(token string) {
 			SET status = $4, kibana_url = $6
 			RETURNING id`
 		id := 0
-		err = database.Db.QueryRow(sqlStatement, obj[i].ID, obj[i].Sha, obj[i].Ref, obj[i].Status, obj[i].WebURL, logURL).Scan(&id)
+		err := database.Db.QueryRow(sqlStatement, aksObj[i].ID, aksObj[i].Sha, aksObj[i].Ref, aksObj[i].Status, aksObj[i].WebURL, logURL).Scan(&id)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -106,7 +108,7 @@ func AksData(token string) {
 				RETURNING id`
 			id := 0
 			err = database.Db.QueryRow(sqlStatement,
-				obj[i].ID,
+				aksObj[i].ID,
 				jobsdata[j].ID,
 				jobsdata[j].Status,
 				jobsdata[j].Stage,

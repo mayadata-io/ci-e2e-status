@@ -50,13 +50,13 @@ func eksPipelineJobs(id int, token string) Jobs {
 	return obj
 }
 
-// EksData from gitlab api for eks and dump to database
-func EksData(token string) {
+// eksPipeline get pipeline data from gitlab
+func eksPipeline(token string) Pipeline {
 	url := BaseURL + "api/v4/projects/" + PlatformID["eks"] + "/pipelines?ref=master"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 	req.Close = true
 	req.Header.Set("Connection", "close")
@@ -64,21 +64,23 @@ func EksData(token string) {
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
 	var obj Pipeline
 	json.Unmarshal(body, &obj)
+	return obj
+}
 
-	for i := range obj {
-		jobsdata := eksPipelineJobs(obj[i].ID, token)
-		if err != nil {
-			fmt.Println(err)
-		}
+// EksData from gitlab api for eks and dump to database
+func EksData(token string) {
+	eksObj := eksPipeline(token)
+	for i := range eksObj {
+		jobsdata := eksPipelineJobs(eksObj[i].ID, token)
 		jobStartedAt := jobsdata[0].StartedAt
 		JobFinishedAt := jobsdata[len(jobsdata)-1].FinishedAt
-		logURL := Kibanaloglink(obj[i].Sha, obj[i].ID, obj[i].Status, jobStartedAt, JobFinishedAt)
+		logURL := Kibanaloglink(eksObj[i].Sha, eksObj[i].ID, eksObj[i].Status, jobStartedAt, JobFinishedAt)
 
 		// Push Eks pipelines data to Database
 		sqlStatement := `
@@ -88,7 +90,7 @@ func EksData(token string) {
 			SET status = $4, kibana_url = $6
 			RETURNING id`
 		id := 0
-		err = database.Db.QueryRow(sqlStatement, obj[i].ID, obj[i].Sha, obj[i].Ref, obj[i].Status, obj[i].WebURL, logURL).Scan(&id)
+		err := database.Db.QueryRow(sqlStatement, eksObj[i].ID, eksObj[i].Sha, eksObj[i].Ref, eksObj[i].Status, eksObj[i].WebURL, logURL).Scan(&id)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -104,7 +106,7 @@ func EksData(token string) {
 				RETURNING id`
 			id := 0
 			err = database.Db.QueryRow(sqlStatement,
-				obj[i].ID,
+				eksObj[i].ID,
 				jobsdata[j].ID,
 				jobsdata[j].Status,
 				jobsdata[j].Stage,

@@ -50,13 +50,13 @@ func gkePipelineJobs(id int, token string) Jobs {
 	return obj
 }
 
-// GkeData from gitlab api for Gke and dump to database
-func GkeData(token string) {
+// gkePipeline get pipeline data from gitlab
+func gkePipeline(token string) Pipeline {
 	url := BaseURL + "api/v4/projects/" + PlatformID["gke"] + "/pipelines?ref=master"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 	req.Close = true
 	req.Header.Set("Connection", "close")
@@ -64,21 +64,23 @@ func GkeData(token string) {
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
 	var obj Pipeline
 	json.Unmarshal(body, &obj)
+	return obj
+}
 
-	for i := range obj {
-		jobsdata := gkePipelineJobs(obj[i].ID, token)
-		if err != nil {
-			fmt.Println(err)
-		}
+// GkeData from gitlab api for Gke and dump to database
+func GkeData(token string) {
+	gkeObj := gkePipeline(token)
+	for i := range gkeObj {
+		jobsdata := gkePipelineJobs(gkeObj[i].ID, token)
 		jobStartedAt := jobsdata[0].StartedAt
 		JobFinishedAt := jobsdata[len(jobsdata)-1].FinishedAt
-		logURL := Kibanaloglink(obj[i].Sha, obj[i].ID, obj[i].Status, jobStartedAt, JobFinishedAt)
+		logURL := Kibanaloglink(gkeObj[i].Sha, gkeObj[i].ID, gkeObj[i].Status, jobStartedAt, JobFinishedAt)
 
 		// Add Gke pipelines data to Database
 		sqlStatement := `
@@ -88,7 +90,7 @@ func GkeData(token string) {
 			SET status = $4, kibana_url = $6
 			RETURNING id`
 		id := 0
-		err = database.Db.QueryRow(sqlStatement, obj[i].ID, obj[i].Sha, obj[i].Ref, obj[i].Status, obj[i].WebURL, logURL).Scan(&id)
+		err := database.Db.QueryRow(sqlStatement, gkeObj[i].ID, gkeObj[i].Sha, gkeObj[i].Ref, gkeObj[i].Status, gkeObj[i].WebURL, logURL).Scan(&id)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -104,7 +106,7 @@ func GkeData(token string) {
 				RETURNING id`
 			id := 0
 			err = database.Db.QueryRow(sqlStatement,
-				obj[i].ID,
+				gkeObj[i].ID,
 				jobsdata[j].ID,
 				jobsdata[j].Status,
 				jobsdata[j].Stage,

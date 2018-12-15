@@ -50,13 +50,13 @@ func packetPipelineJobs(id int, token string) Jobs {
 	return obj
 }
 
-// PacketData from gitlab api for packet and dump to database
-func PacketData(token string) {
+// packetPipeline get pipeline data from gitlab
+func packetPipeline(token string) Pipeline {
 	url := BaseURL + "api/v4/projects/" + PlatformID["packet"] + "/pipelines?ref=master"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 	req.Close = true
 	req.Header.Set("Connection", "close")
@@ -64,21 +64,23 @@ func PacketData(token string) {
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
 	var obj Pipeline
 	json.Unmarshal(body, &obj)
+	return obj
+}
 
-	for i := range obj {
-		jobsdata := packetPipelineJobs(obj[i].ID, token)
-		if err != nil {
-			fmt.Println(err)
-		}
+// PacketData from gitlab api for packet and dump to database
+func PacketData(token string) {
+	packetObj := packetPipeline(token)
+	for i := range packetObj {
+		jobsdata := packetPipelineJobs(packetObj[i].ID, token)
 		jobStartedAt := jobsdata[0].StartedAt
 		JobFinishedAt := jobsdata[len(jobsdata)-1].FinishedAt
-		logURL := Kibanaloglink(obj[i].Sha, obj[i].ID, obj[i].Status, jobStartedAt, JobFinishedAt)
+		logURL := Kibanaloglink(packetObj[i].Sha, packetObj[i].ID, packetObj[i].Status, jobStartedAt, JobFinishedAt)
 
 		// Add Packet pipelines data to Database
 		sqlStatement := `
@@ -88,7 +90,7 @@ func PacketData(token string) {
 			SET status = $4, kibana_url = $6
 			RETURNING id`
 		id := 0
-		err = database.Db.QueryRow(sqlStatement, obj[i].ID, obj[i].Sha, obj[i].Ref, obj[i].Status, obj[i].WebURL, logURL).Scan(&id)
+		err := database.Db.QueryRow(sqlStatement, packetObj[i].ID, packetObj[i].Sha, packetObj[i].Ref, packetObj[i].Status, packetObj[i].WebURL, logURL).Scan(&id)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -104,7 +106,7 @@ func PacketData(token string) {
 				RETURNING id`
 			id := 0
 			err = database.Db.QueryRow(sqlStatement,
-				obj[i].ID,
+				packetObj[i].ID,
 				jobsdata[j].ID,
 				jobsdata[j].Status,
 				jobsdata[j].Stage,

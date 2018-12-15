@@ -75,14 +75,13 @@ func mayaPipelineJobs(id int, token string) BuildJobs {
 	return obj
 }
 
-// BuildData from gitlab api for packet and dump to database
-func BuildData(token string) {
-	// Fetch jiva data from gitlab
+// jivaPipeline get jiva pipeline data from gitlab
+func jivaPipeline(token string) Pipeline {
 	jivaURL := BaseURL + "api/v4/projects/" + PlatformID["jiva"] + "/pipelines?ref=master"
 	req, err := http.NewRequest("GET", jivaURL, nil)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 	req.Close = true
 	req.Header.Set("Connection", "close")
@@ -90,18 +89,44 @@ func BuildData(token string) {
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return nil
 	}
 	defer res.Body.Close()
 	jivaData, _ := ioutil.ReadAll(res.Body)
-	var jivaObj Pipeline
-	json.Unmarshal(jivaData, &jivaObj)
+	var obj Pipeline
+	json.Unmarshal(jivaData, &obj)
+	return obj
+}
 
+// mayaPipeline get maya pipeline data from gitlab
+func mayaPipeline(token string) Pipeline {
+	mayaURL := BaseURL + "api/v4/projects/" + PlatformID["maya"] + "/pipelines?ref=master"
+	req, err := http.NewRequest("GET", mayaURL, nil)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	req.Header.Add("PRIVATE-TOKEN", token)
+	req.Close = true
+	req.Header.Set("Connection", "close")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	defer res.Body.Close()
+	mayaData, _ := ioutil.ReadAll(res.Body)
+	var obj Pipeline
+	json.Unmarshal(mayaData, &obj)
+	return obj
+}
+
+// BuildData from gitlab api for packet and dump to database
+func BuildData(token string) {
+	jivaObj := jivaPipeline(token)
+	mayaObj := mayaPipeline(token)
 	for i := range jivaObj {
 		jivaJobsData := jivaPipelineJobs(jivaObj[i].ID, token)
-		if err != nil {
-			fmt.Println(err)
-		}
 		// Add jiva pipelines data to Database
 		sqlStatement := `
 			INSERT INTO buildpipeline (id, sha, ref, status, web_url)
@@ -110,7 +135,7 @@ func BuildData(token string) {
 			SET status = $4
 			RETURNING id`
 		id := 0
-		err = database.Db.QueryRow(sqlStatement, jivaObj[i].ID, jivaObj[i].Sha, jivaObj[i].Ref, jivaObj[i].Status, jivaObj[i].WebURL).Scan(&id)
+		err := database.Db.QueryRow(sqlStatement, jivaObj[i].ID, jivaObj[i].Sha, jivaObj[i].Ref, jivaObj[i].Status, jivaObj[i].WebURL).Scan(&id)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -144,32 +169,8 @@ func BuildData(token string) {
 			fmt.Println("New record ID for jiva pipeline Jobs: ", id)
 		}
 	}
-
-	// Fetch maya pipeline data from gitlab
-	mayaURL := BaseURL + "api/v4/projects/" + PlatformID["maya"] + "/pipelines?ref=master"
-	req, err = http.NewRequest("GET", mayaURL, nil)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	req.Header.Add("PRIVATE-TOKEN", token)
-	req.Close = true
-	req.Header.Set("Connection", "close")
-	res, err = http.DefaultClient.Do(req)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer res.Body.Close()
-	mayaData, _ := ioutil.ReadAll(res.Body)
-	var mayaObj Pipeline
-	json.Unmarshal(mayaData, &mayaObj)
-
 	for i := range mayaObj {
 		mayaJobsData := mayaPipelineJobs(mayaObj[i].ID, token)
-		if err != nil {
-			fmt.Println(err)
-		}
 		// Add Maya pipelines data to Database
 		sqlStatement := `
 			INSERT INTO buildpipeline (id, sha, ref, status, web_url)
@@ -178,7 +179,7 @@ func BuildData(token string) {
 			SET status = $4
 			RETURNING id`
 		id := 0
-		err = database.Db.QueryRow(sqlStatement, mayaObj[i].ID, mayaObj[i].Sha, mayaObj[i].Ref, mayaObj[i].Status, mayaObj[i].WebURL).Scan(&id)
+		err := database.Db.QueryRow(sqlStatement, mayaObj[i].ID, mayaObj[i].Sha, mayaObj[i].Ref, mayaObj[i].Status, mayaObj[i].WebURL).Scan(&id)
 		if err != nil {
 			fmt.Println(err)
 		}
