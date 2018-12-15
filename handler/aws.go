@@ -5,41 +5,47 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strconv"
+	"time"
 
 	"github.com/openebs/ci-e2e-dashboard-go-backend/database"
 )
 
 // Awshandler return aws pipeline data to api
 func Awshandler(w http.ResponseWriter, r *http.Request) {
+	(w).Header().Set("Access-Control-Allow-Origin", "*")
 	datas := dashboard{}
-	err := QueryAwsData(&datas)
+	err := queryAwsData(&datas)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+		fmt.Println(err)
 		return
 	}
 	out, err := json.Marshal(datas)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+		fmt.Println(err)
 		return
 	}
 	w.Write(out)
-	token, ok := os.LookupEnv(token)
-	if !ok {
-		panic("DBPASS environment variable required but not set")
-	}
-	go AwsData(token)
 }
 
 // awsPipelineJobs will get pipeline jobs details from gitlab api
 func awsPipelineJobs(id int, token string) Jobs {
 	url := BaseURL + "api/v4/projects/" + PlatformID["aws"] + "/pipelines/" + strconv.Itoa(id) + "/jobs?per_page=50"
-	req, _ := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	http.DefaultClient.Timeout = time.Minute * 10
+	req.Close = true
+	req.Header.Set("Connection", "close")
 	req.Header.Add("PRIVATE-TOKEN", token)
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println(err)
+		return nil
 	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
@@ -54,11 +60,16 @@ func AwsData(token string) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
+	http.DefaultClient.Timeout = time.Minute * 10
+	req.Close = true
+	req.Header.Set("Connection", "close")
 	req.Header.Add("PRIVATE-TOKEN", token)
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
@@ -74,7 +85,7 @@ func AwsData(token string) {
 		JobFinishedAt := jobsdata[len(jobsdata)-1].FinishedAt
 		logURL := Kibanaloglink(obj[i].Sha, obj[i].ID, obj[i].Status, jobStartedAt, JobFinishedAt)
 
-		// Push Aws pipelines data to Database
+		// Add Aws pipelines data to Database
 		sqlStatement := `
 			INSERT INTO awspipeline (id, sha, ref, status, web_url, kibana_url)
 			VALUES ($1, $2, $3, $4, $5, $6)
@@ -88,7 +99,7 @@ func AwsData(token string) {
 		}
 		fmt.Println("New record ID for AWS Pipeline:", id)
 
-		// Push Aws jobs data to Database
+		// Add Aws jobs data to Database
 		for j := range jobsdata {
 			sqlStatement := `
 				INSERT INTO awsjobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at)
@@ -116,8 +127,8 @@ func AwsData(token string) {
 	}
 }
 
-// QueryAwsData fetch the pipeline data as well as jobs data for aws platform
-func QueryAwsData(datas *dashboard) error {
+// queryAwsData fetch the pipeline data as well as jobs data for aws platform
+func queryAwsData(datas *dashboard) error {
 	pipelinerows, err := database.Db.Query(`SELECT * FROM awspipeline ORDER BY id DESC`)
 	if err != nil {
 		fmt.Println(err)

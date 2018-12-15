@@ -68,3 +68,51 @@ type pipelineSummary struct {
 type dashboard struct {
 	Dashboard []pipelineSummary `json:"dashboard"`
 }
+
+// BuildJobs struct
+type BuildJobs []struct {
+	ID         int    `json:"id"`
+	Status     string `json:"status"`
+	Stage      string `json:"stage"`
+	Name       string `json:"name"`
+	Ref        string `json:"ref"`
+	CreatedAt  string `json:"created_at"`
+	StartedAt  string `json:"started_at"`
+	FinishedAt string `json:"finished_at"`
+	Message    string `json:"message"`
+	AuthorName string `json:"author_name"`
+	Commit     struct {
+		Message    string `json:"message"`
+		AuthorName string `json:"author_name"`
+	} `json:"commit"`
+}
+
+// BuildJobssummary contains the details of builds job for database
+type BuildJobssummary struct {
+	PipelineID int    `json:"pipelineid"`
+	ID         int    `json:"id"`
+	Status     string `json:"status"`
+	Stage      string `json:"stage"`
+	Name       string `json:"name"`
+	Ref        string `json:"ref"`
+	CreatedAt  string `json:"created_at"`
+	StartedAt  string `json:"started_at"`
+	FinishedAt string `json:"finished_at"`
+	Message    string `json:"message"`
+	AuthorName string `json:"author_name"`
+}
+
+// BuildpipelineSummary contains the details of a builds pipelines
+type BuildpipelineSummary struct {
+	ID     int                `json:"id"`
+	Sha    string             `json:"sha"`
+	Ref    string             `json:"ref"`
+	Status string             `json:"status"`
+	WebURL string             `json:"web_url"`
+	Jobs   []BuildJobssummary `json:"jobs"`
+}
+
+// Builddashboard contains the details related to builds
+type Builddashboard struct {
+	Dashboard []BuildpipelineSummary `json:"dashboard"`
+}

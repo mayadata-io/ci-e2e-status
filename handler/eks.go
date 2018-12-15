@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/openebs/ci-e2e-dashboard-go-backend/database"
@@ -13,33 +12,36 @@ import (
 
 // Ekshandler return eks pipeline data to api
 func Ekshandler(w http.ResponseWriter, r *http.Request) {
+	(w).Header().Set("Access-Control-Allow-Origin", "*")
 	datas := dashboard{}
 	err := QueryEksData(&datas)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
-		return
+		fmt.Println(err)
 	}
 	out, err := json.Marshal(datas)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
-		return
+		fmt.Println(err)
 	}
 	w.Write(out)
-	token, ok := os.LookupEnv(token)
-	if !ok {
-		panic("TOKEN environment variable required but not set")
-	}
-	go EksData(token)
 }
 
 // eksPipelineJobs will get pipeline jobs details from gitlab api
 func eksPipelineJobs(id int, token string) Jobs {
 	url := BaseURL + "api/v4/projects/" + PlatformID["eks"] + "/pipelines/" + strconv.Itoa(id) + "/jobs?per_page=50"
-	req, _ := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	req.Close = true
+	req.Header.Set("Connection", "close")
 	req.Header.Add("PRIVATE-TOKEN", token)
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println(err)
+		return nil
 	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
@@ -54,11 +56,15 @@ func EksData(token string) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
+	req.Close = true
+	req.Header.Set("Connection", "close")
 	req.Header.Add("PRIVATE-TOKEN", token)
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)

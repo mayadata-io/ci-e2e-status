@@ -15,8 +15,8 @@ ls -ltr
 
 ## Pre-requisite for localhost
 
-1 - Postgress is running
-2 - Export variable like following
+1 - Postgress running in local
+2 - Export variable like following ...
 
 ```bash
 export DBHOST=<db_host>

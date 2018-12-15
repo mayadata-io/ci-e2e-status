@@ -38,10 +38,12 @@ func InitDb() {
 	createTable()
 }
 
+// createTable in database if not abvailable
 func createTable() {
+	// Create platform, pipeline and job table
 	platform := map[string][]string{
-		"pipeline":     []string{"gkepipeline", "akspipeline", "ekspipeline", "packetpipeline", "gcppipeline", "awspipeline", "buildpipeline"},
-		"pipelineJobs": []string{"gkejobs", "aksjobs", "eksjobs", "packetjobs", "gcpjobs", "awsjobs", "buildjobs"},
+		"pipeline":     []string{"gkepipeline", "akspipeline", "ekspipeline", "packetpipeline", "gcppipeline", "awspipeline"},
+		"pipelineJobs": []string{"gkejobs", "aksjobs", "eksjobs", "packetjobs", "gcpjobs", "awsjobs"},
 	}
 	for i := range platform["pipeline"] {
 		query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, kibana_url VARCHAR);", platform["pipeline"][i])
@@ -56,8 +58,21 @@ func createTable() {
 			fmt.Println(err)
 		}
 	}
+
+	// create build, pipeline and job table
+	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS buildpipeline(id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR);")
+	_, err := Db.Query(query)
+	if err != nil {
+		fmt.Println(err)
+	}
+	query = fmt.Sprintf("CREATE TABLE IF NOT EXISTS buildjobs(pipelineid INT, id INT PRIMARY KEY,status VARCHAR, stage VARCHAR, name VARCHAR, ref VARCHAR, created_at VARCHAR, started_at VARCHAR, finished_at VARCHAR, message VARCHAR, author_name VARCHAR);")
+	_, err = Db.Query(query)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
+// dbConfig get config from environment variable
 func dbConfig() map[string]string {
 	conf := make(map[string]string)
 	host, ok := os.LookupEnv(dbhost)

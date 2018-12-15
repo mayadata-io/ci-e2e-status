@@ -12,6 +12,7 @@ import (
 
 func main() {
 	database.InitDb()
+	go handler.UpdateDatabase()
 	http.HandleFunc("/gke", handler.Gkehandler)
 	http.HandleFunc("/aws", handler.Awshandler)
 	http.HandleFunc("/gcp", handler.Gcphandler)

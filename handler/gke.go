@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/openebs/ci-e2e-dashboard-go-backend/database"
@@ -13,33 +12,36 @@ import (
 
 // Gkehandler return Gke pipeline data to api
 func Gkehandler(w http.ResponseWriter, r *http.Request) {
+	(w).Header().Set("Access-Control-Allow-Origin", "*")
 	datas := dashboard{}
 	err := QueryGkeData(&datas)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
-		return
+		fmt.Println(err)
 	}
 	out, err := json.Marshal(datas)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
-		return
+		fmt.Println(err)
 	}
 	w.Write(out)
-	token, ok := os.LookupEnv(token)
-	if !ok {
-		panic("TOKEN environment variable required but not set")
-	}
-	go GkeData(token)
 }
 
 // gkePipelineJobs will get pipeline jobs details from gitlab api
 func gkePipelineJobs(id int, token string) Jobs {
 	url := BaseURL + "api/v4/projects/" + PlatformID["gke"] + "/pipelines/" + strconv.Itoa(id) + "/jobs?per_page=50"
-	req, _ := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	req.Close = true
+	req.Header.Set("Connection", "close")
 	req.Header.Add("PRIVATE-TOKEN", token)
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println(err)
+		return nil
 	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
@@ -54,11 +56,15 @@ func GkeData(token string) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
+	req.Close = true
+	req.Header.Set("Connection", "close")
 	req.Header.Add("PRIVATE-TOKEN", token)
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
@@ -74,7 +80,7 @@ func GkeData(token string) {
 		JobFinishedAt := jobsdata[len(jobsdata)-1].FinishedAt
 		logURL := Kibanaloglink(obj[i].Sha, obj[i].ID, obj[i].Status, jobStartedAt, JobFinishedAt)
 
-		// Push Gke pipelines data to Database
+		// Add Gke pipelines data to Database
 		sqlStatement := `
 			INSERT INTO gkepipeline (id, sha, ref, status, web_url, kibana_url)
 			VALUES ($1, $2, $3, $4, $5, $6)
@@ -88,7 +94,7 @@ func GkeData(token string) {
 		}
 		fmt.Println("New record ID for GKE Pipeline:", id)
 
-		// Push Gke jobs data to Database
+		// Add Gke jobs data to Database
 		for j := range jobsdata {
 			sqlStatement := `
 				INSERT INTO gkejobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at)

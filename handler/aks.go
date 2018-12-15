@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/openebs/ci-e2e-dashboard-go-backend/database"
@@ -13,33 +12,38 @@ import (
 
 // Akshandler return aks pipeline data to api
 func Akshandler(w http.ResponseWriter, r *http.Request) {
+	(w).Header().Set("Access-Control-Allow-Origin", "*")
 	datas := dashboard{}
-	err := QueryAksData(&datas)
+	err := queryAksData(&datas)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+		fmt.Println(err)
 		return
 	}
 	out, err := json.Marshal(datas)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+		fmt.Println(err)
 		return
 	}
 	w.Write(out)
-	token, ok := os.LookupEnv(token)
-	if !ok {
-		panic("TOKEN environment variable required but not set")
-	}
-	go AksData(token)
 }
 
 // aksPipelineJobs will get pipeline jobs details from gitlab api
 func aksPipelineJobs(id int, token string) Jobs {
 	url := BaseURL + "api/v4/projects/2/pipelines/" + strconv.Itoa(id) + "/jobs?per_page=50"
-	req, _ := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	req.Close = true
+	req.Header.Set("Connection", "close")
 	req.Header.Add("PRIVATE-TOKEN", token)
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println(err)
+		return nil
 	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
@@ -54,11 +58,15 @@ func AksData(token string) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
+	req.Close = true
+	req.Header.Set("Connection", "close")
 	req.Header.Add("PRIVATE-TOKEN", token)
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
@@ -74,7 +82,7 @@ func AksData(token string) {
 		JobFinishedAt := jobsdata[len(jobsdata)-1].FinishedAt
 		logURL := Kibanaloglink(obj[i].Sha, obj[i].ID, obj[i].Status, jobStartedAt, JobFinishedAt)
 
-		// Push Aks pipelines data to Database
+		// Add Aks pipelines data to Database
 		sqlStatement := `
 			INSERT INTO akspipeline (id, sha, ref, status, web_url, kibana_url)
 			VALUES ($1, $2, $3, $4, $5, $6)
@@ -88,7 +96,7 @@ func AksData(token string) {
 		}
 		fmt.Println("New record ID for Aks Pipeline:", id)
 
-		// Push Aks jobs data to Database
+		// Add Aks jobs data to Database
 		for j := range jobsdata {
 			sqlStatement := `
 				INSERT INTO aksjobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at)
@@ -116,8 +124,8 @@ func AksData(token string) {
 	}
 }
 
-// QueryAksData fetch the pipeline data as well as jobs data for aks platform
-func QueryAksData(datas *dashboard) error {
+// queryAksData fetch the pipeline data as well as jobs data for aks platform
+func queryAksData(datas *dashboard) error {
 	pipelinerows, err := database.Db.Query(`SELECT * FROM akspipeline ORDER BY id DESC`)
 	if err != nil {
 		fmt.Println(err)
