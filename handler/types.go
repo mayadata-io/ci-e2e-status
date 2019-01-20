@@ -1,5 +1,19 @@
 package handler
 
+// PlatformID assignment from gitlab repository
+const (
+	AKSID    = "2"
+	AWSID    = "1"
+	EKSID    = "3"
+	GCPID    = "4"
+	GKEID    = "5"
+	PACKETID = "6"
+	MAYAID   = "8"
+	JIVAID   = "7"
+)
+
+// var token string
+
 const (
 	token = "TOKEN"
 )
@@ -7,16 +21,13 @@ const (
 // BaseURL for gitlab
 var BaseURL = "https://gitlab.openebs.ci/"
 
-// PlatformID for gitlab repository
-var PlatformID = map[string]string{
-	"aks":    "2",
-	"aws":    "1",
-	"eks":    "3",
-	"gcp":    "4",
-	"gke":    "5",
-	"packet": "6",
-	"maya":   "8",
-	"jiva":   "7",
+// PlatformPipeline struct
+type PlatformPipeline struct {
+	ID     int    `json:"id"`
+	Sha    string `json:"sha"`
+	Ref    string `json:"ref"`
+	Status string `json:"status"`
+	WebURL string `json:"web_url"`
 }
 
 // Pipeline struct
@@ -81,6 +92,7 @@ type BuildJobs []struct {
 	FinishedAt string `json:"finished_at"`
 	Message    string `json:"message"`
 	AuthorName string `json:"author_name"`
+	WebURL     string `json:"web_url"`
 	Commit     struct {
 		Message    string `json:"message"`
 		AuthorName string `json:"author_name"`
@@ -104,12 +116,14 @@ type BuildJobssummary struct {
 
 // BuildpipelineSummary contains the details of a builds pipelines
 type BuildpipelineSummary struct {
-	ID     int                `json:"id"`
-	Sha    string             `json:"sha"`
-	Ref    string             `json:"ref"`
-	Status string             `json:"status"`
-	WebURL string             `json:"web_url"`
-	Jobs   []BuildJobssummary `json:"jobs"`
+	ID            int                `json:"id"`
+	Sha           string             `json:"sha"`
+	Ref           string             `json:"ref"`
+	Status        string             `json:"status"`
+	WebURL        string             `json:"web_url"`
+	GKETriggerPID string             `json:"gke_trigger_pid"`
+	EKSTriggerPID string             `json:"eks_trigger_pid"`
+	Jobs          []BuildJobssummary `json:"jobs"`
 }
 
 // Builddashboard contains the details related to builds

@@ -2,8 +2,11 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"os"
+
+	"github.com/golang/glog"
 )
 
 // Db variable use in other package
@@ -19,8 +22,10 @@ const (
 
 // InitDb will start DB connection
 func InitDb() {
-	config := dbConfig()
-	var err error
+	config, err := dbConfig()
+	if err != nil {
+		glog.Fatalln(err)
+	}
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		config[dbhost], config[dbport],
@@ -28,77 +33,79 @@ func InitDb() {
 
 	Db, err = sql.Open("postgres", psqlInfo)
 	if err != nil {
-		panic(err)
+		glog.Fatalln(err)
 	}
 	err = Db.Ping()
 	if err != nil {
-		panic(err)
+		glog.Fatalln(err)
 	}
-	fmt.Println("Successfully connected to Database!")
+	glog.Infof("Successfully connected to Database!")
+	// Create table in database if not present
 	createTable()
 }
 
 // createTable in database if not abvailable
 func createTable() {
 	// Create platform, pipeline and job table
-	platform := map[string][]string{
-		"pipeline":     []string{"gkepipeline", "akspipeline", "ekspipeline", "packetpipeline", "gcppipeline", "awspipeline"},
-		"pipelineJobs": []string{"gkejobs", "aksjobs", "eksjobs", "packetjobs", "gcpjobs", "awsjobs"},
-	}
-	for i := range platform["pipeline"] {
-		query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, kibana_url VARCHAR);", platform["pipeline"][i])
+	pipeline := []string{"gkepipeline", "akspipeline", "ekspipeline", "packetpipeline", "gcppipeline", "awspipeline"}
+	pipelineJobs := []string{"gkejobs", "aksjobs", "eksjobs", "packetjobs", "gcpjobs", "awsjobs"}
+	// Create pipeline table in database
+	for i := range pipeline {
+		query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(id INT, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, kibana_url VARCHAR);", pipeline[i])
 		_, err := Db.Query(query)
 		if err != nil {
-			fmt.Println(err)
-		}
-
-		query = fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(pipelineid INT, id INT PRIMARY KEY,status VARCHAR, stage VARCHAR, name VARCHAR, ref VARCHAR, created_at VARCHAR, started_at VARCHAR, finished_at VARCHAR);", platform["pipelineJobs"][i])
-		_, err = Db.Query(query)
-		if err != nil {
-			fmt.Println(err)
+			glog.Error(err)
 		}
 	}
-
-	// create build, pipeline and job table
-	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS buildpipeline(id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR);")
+	// Create pipeline jobs table in database
+	for i := range pipelineJobs {
+		query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(pipelineid INT, id INT PRIMARY KEY,status VARCHAR, stage VARCHAR, name VARCHAR, ref VARCHAR, created_at VARCHAR, started_at VARCHAR, finished_at VARCHAR);", pipelineJobs[i])
+		_, err := Db.Query(query)
+		if err != nil {
+			glog.Error(err)
+		}
+	}
+	// create build pipelines table for build related r/w operation
+	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS buildpipeline(id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, gke_trigger_pid VARCHAR, eks_trigger_pid VARCHAR);")
 	_, err := Db.Query(query)
 	if err != nil {
-		fmt.Println(err)
+		glog.Error(err)
 	}
+	// create build pipeline jobs table in database
 	query = fmt.Sprintf("CREATE TABLE IF NOT EXISTS buildjobs(pipelineid INT, id INT PRIMARY KEY,status VARCHAR, stage VARCHAR, name VARCHAR, ref VARCHAR, created_at VARCHAR, started_at VARCHAR, finished_at VARCHAR, message VARCHAR, author_name VARCHAR);")
 	_, err = Db.Query(query)
 	if err != nil {
-		fmt.Println(err)
+		glog.Error(err)
 	}
 }
 
 // dbConfig get config from environment variable
-func dbConfig() map[string]string {
+func dbConfig() (map[string]string, error) {
 	conf := make(map[string]string)
 	host, ok := os.LookupEnv(dbhost)
 	if !ok {
-		panic("DBHOST environment variable required but not set")
+		return nil, errors.New("DBHOST environment variable required")
 	}
 	port, ok := os.LookupEnv(dbport)
 	if !ok {
-		panic("DBPORT environment variable required but not set")
+		return nil, errors.New("DBPORT environment variable required")
 	}
 	user, ok := os.LookupEnv(dbuser)
 	if !ok {
-		panic("DBUSER environment variable required but not set")
+		return nil, errors.New("DBUSER environment variable required")
 	}
 	password, ok := os.LookupEnv(dbpass)
 	if !ok {
-		panic("DBPASS environment variable required but not set")
+		return nil, errors.New("DBPASS environment variable required")
 	}
 	name, ok := os.LookupEnv(dbname)
 	if !ok {
-		panic("DBNAME environment variable required but not set")
+		return nil, errors.New("DBNAME environment variable required")
 	}
 	conf[dbhost] = host
 	conf[dbport] = port
 	conf[dbuser] = user
 	conf[dbpass] = password
 	conf[dbname] = name
-	return conf
+	return conf, nil
 }

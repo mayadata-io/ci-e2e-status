@@ -2,135 +2,173 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 
+	"github.com/golang/glog"
 	"github.com/openebs/ci-e2e-dashboard-go-backend/database"
 )
 
-// Gkehandler return Gke pipeline data to api
+// Gkehandler return gke pipeline data to /gke path
 func Gkehandler(w http.ResponseWriter, r *http.Request) {
+	// Allow cross origin request
 	(w).Header().Set("Access-Control-Allow-Origin", "*")
 	datas := dashboard{}
 	err := QueryGkeData(&datas)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
-		fmt.Println(err)
+		glog.Error("query gke Data Error:", err)
 	}
 	out, err := json.Marshal(datas)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
-		fmt.Println(err)
+		glog.Error("Marshalling queried data Error:", err)
 	}
 	w.Write(out)
 }
 
-// gkePipelineJobs will get pipeline jobs details from gitlab api
-func gkePipelineJobs(id int, token string) Jobs {
-	url := BaseURL + "api/v4/projects/" + PlatformID["gke"] + "/pipelines/" + strconv.Itoa(id) + "/jobs?per_page=50"
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-	req.Close = true
-	req.Header.Set("Connection", "close")
-	req.Header.Add("PRIVATE-TOKEN", token)
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-	defer res.Body.Close()
-	body, _ := ioutil.ReadAll(res.Body)
-	var obj Jobs
-	json.Unmarshal(body, &obj)
-	return obj
-}
-
-// gkePipeline get pipeline data from gitlab
-func gkePipeline(token string) Pipeline {
-	url := BaseURL + "api/v4/projects/" + PlatformID["gke"] + "/pipelines?ref=master"
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-	req.Close = true
-	req.Header.Set("Connection", "close")
-	req.Header.Add("PRIVATE-TOKEN", token)
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-	defer res.Body.Close()
-	body, _ := ioutil.ReadAll(res.Body)
-	var obj Pipeline
-	json.Unmarshal(body, &obj)
-	return obj
-}
-
 // GkeData from gitlab api for Gke and dump to database
 func GkeData(token string) {
-	gkeObj := gkePipeline(token)
-	for i := range gkeObj {
-		jobsdata := gkePipelineJobs(gkeObj[i].ID, token)
-		jobStartedAt := jobsdata[0].StartedAt
-		JobFinishedAt := jobsdata[len(jobsdata)-1].FinishedAt
-		logURL := Kibanaloglink(gkeObj[i].Sha, gkeObj[i].ID, gkeObj[i].Status, jobStartedAt, JobFinishedAt)
 
-		// Add Gke pipelines data to Database
+	gkePipelineID, err := database.Db.Query(`SELECT gke_trigger_pid FROM buildpipeline ORDER BY id DESC`)
+	if err != nil {
+		glog.Error("GKE pipeline quering data Error:", err)
+	}
+	for gkePipelineID.Next() {
+		var logURL = ""
+		pipelinedata := pipelineSummary{}
+		err = gkePipelineID.Scan(
+			&pipelinedata.ID,
+		)
+		gkePipelineData, err := gkePipeline(token, pipelinedata.ID)
+		pipelineJobsdata, err := gkePipelineJobs(gkePipelineData.ID, token)
+		if err != nil {
+			glog.Error("GKE pipeline function return Error:", err)
+			return
+		}
+		if pipelinedata.ID != 0 {
+			jobStartedAt := pipelineJobsdata[0].StartedAt
+			JobFinishedAt := pipelineJobsdata[len(pipelineJobsdata)-1].FinishedAt
+			logURL = Kibanaloglink(gkePipelineData.Sha, gkePipelineData.ID, gkePipelineData.Status, jobStartedAt, JobFinishedAt)
+		}
 		sqlStatement := `
 			INSERT INTO gkepipeline (id, sha, ref, status, web_url, kibana_url)
 			VALUES ($1, $2, $3, $4, $5, $6)
-			ON CONFLICT (id) DO UPDATE
-			SET status = $4, kibana_url = $6
 			RETURNING id`
 		id := 0
-		err := database.Db.QueryRow(sqlStatement, gkeObj[i].ID, gkeObj[i].Sha, gkeObj[i].Ref, gkeObj[i].Status, gkeObj[i].WebURL, logURL).Scan(&id)
+		err = database.Db.QueryRow(sqlStatement,
+			gkePipelineData.ID,
+			gkePipelineData.Sha,
+			gkePipelineData.Ref,
+			gkePipelineData.Status,
+			gkePipelineData.WebURL,
+			logURL,
+		).Scan(&id)
 		if err != nil {
-			fmt.Println(err)
+			glog.Error("GKE pipeline data insertion Error:", err)
 		}
-		fmt.Println("New record ID for GKE Pipeline:", id)
-
-		// Add Gke jobs data to Database
-		for j := range jobsdata {
-			sqlStatement := `
-				INSERT INTO gkejobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-				ON CONFLICT (id) DO UPDATE
-				SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9
-				RETURNING id`
-			id := 0
-			err = database.Db.QueryRow(sqlStatement,
-				gkeObj[i].ID,
-				jobsdata[j].ID,
-				jobsdata[j].Status,
-				jobsdata[j].Stage,
-				jobsdata[j].Name,
-				jobsdata[j].Ref,
-				jobsdata[j].CreatedAt,
-				jobsdata[j].StartedAt,
-				jobsdata[j].FinishedAt,
-			).Scan(&id)
-			if err != nil {
-				fmt.Println(err)
+		glog.Infof("New record ID for GKE Pipeline:", id)
+		if pipelinedata.ID != 0 {
+			for j := range pipelineJobsdata {
+				sqlStatement := `
+					INSERT INTO gkejobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at)
+					VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+					ON CONFLICT (id) DO UPDATE
+					SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9
+					RETURNING id`
+				id := 0
+				err = database.Db.QueryRow(sqlStatement,
+					gkePipelineData.ID,
+					pipelineJobsdata[j].ID,
+					pipelineJobsdata[j].Status,
+					pipelineJobsdata[j].Stage,
+					pipelineJobsdata[j].Name,
+					pipelineJobsdata[j].Ref,
+					pipelineJobsdata[j].CreatedAt,
+					pipelineJobsdata[j].StartedAt,
+					pipelineJobsdata[j].FinishedAt,
+				).Scan(&id)
+				if err != nil {
+					glog.Error("GKE pipeline jobs data insertion Error:", err)
+				}
+				glog.Infof("New record ID for GKE Jobs: %s", id)
 			}
-			fmt.Println("New record ID for Gke Jobs: ", id)
 		}
 	}
 }
 
-// QueryGkeData fetch the pipeline data as well as jobs data for gke platform
+// gkePipeline will get data from gitlab api and store to DB
+func gkePipeline(token string, pipelineID int) (*PlatformPipeline, error) {
+	dummyJSON := []byte(`{"id":0,"sha":"0000000000000000000000000000000000000000","ref":"none","status":"none","web_url":"none"}`)
+	if pipelineID == 0 {
+		var obj PlatformPipeline
+		json.Unmarshal(dummyJSON, &obj)
+		return &obj, nil
+	}
+	// Store gke pipeline data form gitlab api to gkeObj
+	url := BaseURL + "api/v4/projects/" + GKEID + "/pipelines/" + strconv.Itoa(pipelineID)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		glog.Error("GKE pipeline data request Error:", err)
+		return nil, err
+	}
+	req.Close = true
+	// Set header for api request
+	req.Header.Set("Connection", "close")
+	req.Header.Add("PRIVATE-TOKEN", token)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		glog.Error("GKE pipeline data response Error:", err)
+		return nil, err
+	}
+	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
+	// Unmarshal response data
+	var obj PlatformPipeline
+	json.Unmarshal(body, &obj)
+	return &obj, nil
+}
+
+// gkePipelineJobs will get pipeline jobs details from gitlab jobs api
+func gkePipelineJobs(pipelineID int, token string) (Jobs, error) {
+	// Generate pipeline jobs api url using BaseURL, pipelineID and GKEID
+	if pipelineID == 0 {
+		return nil, nil
+	}
+	url := BaseURL + "api/v4/projects/" + GKEID + "/pipelines/" + strconv.Itoa(pipelineID) + "/jobs?per_page=50"
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		glog.Error("GKE pipeline jobs data request Error:", err)
+		return nil, err
+	}
+	req.Close = true
+	// Set header for api request
+	req.Header.Set("Connection", "close")
+	req.Header.Add("PRIVATE-TOKEN", token)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		glog.Error("GKE pipeline jobs data response Error:", err)
+		return nil, err
+	}
+	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
+	// Unmarshal response data
+	var obj Jobs
+	json.Unmarshal(body, &obj)
+	return obj, nil
+}
+
+// QueryGkeData fetch the pipeline data as well as jobs data form gke table of database
 func QueryGkeData(datas *dashboard) error {
+	// Select all data from packetpipeline table of DB
 	pipelinerows, err := database.Db.Query(`SELECT * FROM gkepipeline ORDER BY id DESC`)
 	if err != nil {
-		fmt.Println(err)
+		glog.Error("GKE pipeline quering data Error:", err)
 	}
+	// Close DB connection after r/w operation
 	defer pipelinerows.Close()
+	// Iterate on each rows of pipeline table data for perform more operation related to pipeline Data
 	for pipelinerows.Next() {
 		pipelinedata := pipelineSummary{}
 		err = pipelinerows.Scan(
@@ -142,16 +180,18 @@ func QueryGkeData(datas *dashboard) error {
 			&pipelinedata.LogURL,
 		)
 		if err != nil {
-			fmt.Println(err)
+			glog.Error("GKE pipeline row data read Error:", err)
 		}
-
+		// Query gkejobs data of respective pipeline using pipelineID from gkejobs table
 		jobsquery := `SELECT * FROM gkejobs WHERE pipelineid = $1 ORDER BY id`
 		jobsrows, err := database.Db.Query(jobsquery, pipelinedata.ID)
 		if err != nil {
-			fmt.Println(err)
+			glog.Error("GKE pipeline jobs quering data Error:", err)
 		}
+		// Close DB connection after r/w operation
 		defer jobsrows.Close()
 		jobsdataarray := []Jobssummary{}
+		// Iterate on each rows of table data for perform more operation related to pipelineJobsData
 		for jobsrows.Next() {
 			jobsdata := Jobssummary{}
 			err = jobsrows.Scan(
@@ -166,16 +206,19 @@ func QueryGkeData(datas *dashboard) error {
 				&jobsdata.FinishedAt,
 			)
 			if err != nil {
-				fmt.Println(err)
+				glog.Error("GKE pipeline jobs row data read Error:", err)
 			}
+			// Append each row data to an array(jobsDataArray)
 			jobsdataarray = append(jobsdataarray, jobsdata)
+			// Add jobs details of pipeline into jobs field of pipelineData
 			pipelinedata.Jobs = jobsdataarray
 		}
+		// Append each pipeline data to datas of field Dashobard
 		datas.Dashboard = append(datas.Dashboard, pipelinedata)
 	}
 	err = pipelinerows.Err()
 	if err != nil {
-		fmt.Println(err)
+		glog.Error("GKE pipelineRows Error:", err)
 	}
 	return nil
 }
