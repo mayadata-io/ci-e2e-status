@@ -32,18 +32,13 @@ func Buildhandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
-// BuildData from gitlab api for packet and dump to database
+// BuildData from gitlab api and store to database
 func BuildData(token string) {
 	jivaPipelineData, err := jivaPipeline(token)
 	if err != nil {
 		glog.Error(err)
 		return
 	}
-	// mayaObj, err := mayaPipeline(token)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	return
-	// }
 	for i := range jivaPipelineData {
 		jivaJobsData, err := jivaPipelineJobs(jivaPipelineData[i].ID, token)
 		if err != nil {
@@ -60,12 +55,17 @@ func BuildData(token string) {
 		if err != nil {
 			glog.Error(err)
 		}
+		// Get AKS, Triggred pipeline ID for jiva build
+		aksTriggerID, err := getTriggerPipelineid(jivaJobsData[1].WebURL, "e2e-azure")
+		if err != nil {
+			glog.Error(err)
+		}
 		// Add jiva pipelines data to Database
 		sqlStatement := `
-			INSERT INTO buildpipeline (id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7)
+			INSERT INTO buildpipeline (id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid, aks_trigger_pid)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 			ON CONFLICT (id) DO UPDATE
-			SET status = $4, gke_trigger_pid = $6, eks_trigger_pid = $7
+			SET status = $4, gke_trigger_pid = $6, eks_trigger_pid = $7, aks_trigger_pid = $8
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
@@ -76,6 +76,7 @@ func BuildData(token string) {
 			jivaPipelineData[i].WebURL,
 			gkeTriggerID,
 			eksTriggerID,
+			aksTriggerID,
 		).Scan(&id)
 		if err != nil {
 			glog.Error(err)
@@ -110,54 +111,246 @@ func BuildData(token string) {
 			glog.Infoln("New record ID for jiva pipeline Jobs: ", id)
 		}
 	}
-	// for i := range mayaObj {
-	// 	mayaJobsData, err := mayaPipelineJobs(mayaObj[i].ID, token)
-	// 	if err != nil {
-	// 		glog.Error(err)
-	// 		return
-	// 	}
-	// 	// Add Maya pipelines data to Database
-	// 	sqlStatement := `
-	// 		INSERT INTO buildpipeline (id, sha, ref, status, web_url)
-	// 		VALUES ($1, $2, $3, $4, $5)
-	// 		ON CONFLICT (id) DO UPDATE
-	// 		SET status = $4
-	// 		RETURNING id`
-	// 	id := 0
-	// 	err = database.Db.QueryRow(sqlStatement, mayaObj[i].ID, mayaObj[i].Sha, mayaObj[i].Ref, mayaObj[i].Status, mayaObj[i].WebURL).Scan(&id)
-	// 	if err != nil {
-	// 		fmt.Println(err)
-	// 	}
-	// 	fmt.Println("New record ID for jiva build Pipeline:", id)
 
-	// 	// Add Maya jobs data to Database
-	// 	for j := range mayaJobsData {
-	// 		sqlStatement := `
-	// 			INSERT INTO buildjobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name)
-	// 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-	// 			ON CONFLICT (id) DO UPDATE
-	// 			SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9
-	// 			RETURNING id`
-	// 		id := 0
-	// 		err = database.Db.QueryRow(sqlStatement,
-	// 			mayaObj[i].ID,
-	// 			mayaJobsData[j].ID,
-	// 			mayaJobsData[j].Status,
-	// 			mayaJobsData[j].Stage,
-	// 			mayaJobsData[j].Name,
-	// 			mayaJobsData[j].Ref,
-	// 			mayaJobsData[j].CreatedAt,
-	// 			mayaJobsData[j].StartedAt,
-	// 			mayaJobsData[j].FinishedAt,
-	// 			mayaJobsData[j].Commit.Message,
-	// 			mayaJobsData[j].Commit.AuthorName,
-	// 		).Scan(&id)
-	// 		if err != nil {
-	// 			fmt.Println(err)
-	// 		}
-	// 		fmt.Println("New record ID for maya pipeline Jobs: ", id)
-	// 	}
-	// }
+	mayaPipelineData, err := mayaPipeline(token)
+	if err != nil {
+		glog.Error(err)
+		return
+	}
+	for i := range mayaPipelineData {
+		mayaJobsData, err := mayaPipelineJobs(mayaPipelineData[i].ID, token)
+		if err != nil {
+			glog.Error(err)
+			return
+		}
+		// Get GKE, Triggred pipeline ID for maya build
+		gkeTriggerID, err := getTriggerPipelineid(mayaJobsData[1].WebURL, "e2e-gke")
+		if err != nil {
+			glog.Error(err)
+		}
+		// Get EKS, Triggred pipeline ID for maya build
+		eksTriggerID, err := getTriggerPipelineid(mayaJobsData[1].WebURL, "e2e-eks")
+		if err != nil {
+			glog.Error(err)
+		}
+		// Get AKS, Triggred pipeline ID for maya build
+		aksTriggerID, err := getTriggerPipelineid(mayaJobsData[1].WebURL, "e2e-azure")
+		if err != nil {
+			glog.Error(err)
+		}
+		// Add maya pipelines data to Database
+		sqlStatement := `
+			INSERT INTO buildpipeline (id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid, aks_trigger_pid)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			ON CONFLICT (id) DO UPDATE
+			SET status = $4, gke_trigger_pid = $6, eks_trigger_pid = $7, aks_trigger_pid = $8
+			RETURNING id`
+		id := 0
+		err = database.Db.QueryRow(sqlStatement,
+			mayaPipelineData[i].ID,
+			mayaPipelineData[i].Sha,
+			mayaPipelineData[i].Ref,
+			mayaPipelineData[i].Status,
+			mayaPipelineData[i].WebURL,
+			gkeTriggerID,
+			eksTriggerID,
+			aksTriggerID,
+		).Scan(&id)
+		if err != nil {
+			glog.Error(err)
+		}
+		glog.Infoln("New record ID for maya Pipeline:", id)
+
+		// Add maya jobs data to Database
+		for j := range mayaJobsData {
+			sqlStatement := `
+				INSERT INTO buildjobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+				ON CONFLICT (id) DO UPDATE
+				SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9
+				RETURNING id`
+			id := 0
+			err = database.Db.QueryRow(sqlStatement,
+				mayaPipelineData[i].ID,
+				mayaJobsData[j].ID,
+				mayaJobsData[j].Status,
+				mayaJobsData[j].Stage,
+				mayaJobsData[j].Name,
+				mayaJobsData[j].Ref,
+				mayaJobsData[j].CreatedAt,
+				mayaJobsData[j].StartedAt,
+				mayaJobsData[j].FinishedAt,
+				mayaJobsData[j].Commit.Message,
+				mayaJobsData[j].Commit.AuthorName,
+			).Scan(&id)
+			if err != nil {
+				glog.Error(err)
+			}
+			glog.Infoln("New record ID for maya pipeline Jobs: ", id)
+		}
+	}
+
+	zfsPipelineData, err := zfsPipeline(token)
+	if err != nil {
+		glog.Error(err)
+		return
+	}
+	for i := range zfsPipelineData {
+		zfsJobsData, err := zfsPipelineJobs(zfsPipelineData[i].ID, token)
+		if err != nil {
+			glog.Error(err)
+			return
+		}
+		// Get GKE, Triggred pipeline ID for zfs build
+		gkeTriggerID, err := getTriggerPipelineid(zfsJobsData[2].WebURL, "e2e-gke")
+		if err != nil {
+			glog.Error(err)
+		}
+		// Get EKS, Triggred pipeline ID for zfs build
+		eksTriggerID, err := getTriggerPipelineid(zfsJobsData[2].WebURL, "e2e-eks")
+		if err != nil {
+			glog.Error(err)
+		}
+		// Get EKS, Triggred pipeline ID for zfs build
+		aksTriggerID, err := getTriggerPipelineid(zfsJobsData[2].WebURL, "e2e-azure")
+		if err != nil {
+			glog.Error(err)
+		}
+		// Add zfs pipelines data to Database
+		sqlStatement := `
+			INSERT INTO buildpipeline (id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid, aks_trigger_pid)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			ON CONFLICT (id) DO UPDATE
+			SET status = $4, gke_trigger_pid = $6, eks_trigger_pid = $7, aks_trigger_pid = $8
+			RETURNING id`
+		id := 0
+		err = database.Db.QueryRow(sqlStatement,
+			zfsPipelineData[i].ID,
+			zfsPipelineData[i].Sha,
+			zfsPipelineData[i].Ref,
+			zfsPipelineData[i].Status,
+			zfsPipelineData[i].WebURL,
+			gkeTriggerID,
+			eksTriggerID,
+			aksTriggerID,
+		).Scan(&id)
+		if err != nil {
+			glog.Error(err)
+		}
+		glog.Infoln("New record ID for zfs Pipeline:", id)
+
+		// Add zfs jobs data to Database
+		for j := range zfsJobsData {
+			sqlStatement := `
+				INSERT INTO buildjobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+				ON CONFLICT (id) DO UPDATE
+				SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9
+				RETURNING id`
+			id := 0
+			err = database.Db.QueryRow(sqlStatement,
+				zfsPipelineData[i].ID,
+				zfsJobsData[j].ID,
+				zfsJobsData[j].Status,
+				zfsJobsData[j].Stage,
+				zfsJobsData[j].Name,
+				zfsJobsData[j].Ref,
+				zfsJobsData[j].CreatedAt,
+				zfsJobsData[j].StartedAt,
+				zfsJobsData[j].FinishedAt,
+				zfsJobsData[j].Commit.Message,
+				zfsJobsData[j].Commit.AuthorName,
+			).Scan(&id)
+			if err != nil {
+				glog.Error(err)
+			}
+			glog.Infoln("New record ID for zfs pipeline Jobs: ", id)
+		}
+	}
+
+	istgtPipelineData, err := istgtPipeline(token)
+	if err != nil {
+		glog.Error(err)
+		return
+	}
+	for i := range istgtPipelineData {
+		istgtJobsData, err := istgtPipelineJobs(istgtPipelineData[i].ID, token)
+		if err != nil {
+			glog.Error(err)
+			return
+		}
+		// Get GKE, Triggred pipeline ID for istgt build
+		gkeTriggerID, err := getTriggerPipelineid(istgtJobsData[1].WebURL, "e2e-gke")
+		if err != nil {
+			glog.Error(err)
+		}
+		// Get EKS, Triggred pipeline ID for istgt build
+		eksTriggerID, err := getTriggerPipelineid(istgtJobsData[1].WebURL, "e2e-eks")
+		if err != nil {
+			glog.Error(err)
+		}
+		// Get AKS, Triggred pipeline ID for istgt build
+		aksTriggerID, err := getTriggerPipelineid(istgtJobsData[1].WebURL, "e2e-azure")
+		if err != nil {
+			glog.Error(err)
+		}
+		// Add istgt pipelines data to Database
+		sqlStatement := `
+			INSERT INTO buildpipeline (id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid, aks_trigger_pid)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			ON CONFLICT (id) DO UPDATE
+			SET status = $4, gke_trigger_pid = $6, eks_trigger_pid = $7, aks_trigger_pid = $8
+			RETURNING id`
+		id := 0
+		err = database.Db.QueryRow(sqlStatement,
+			istgtPipelineData[i].ID,
+			istgtPipelineData[i].Sha,
+			istgtPipelineData[i].Ref,
+			istgtPipelineData[i].Status,
+			istgtPipelineData[i].WebURL,
+			gkeTriggerID,
+			eksTriggerID,
+			aksTriggerID,
+		).Scan(&id)
+		if err != nil {
+			glog.Error(err)
+		}
+		glog.Infoln("New record ID for istgt Pipeline:", id)
+
+		// Add istgt jobs data to Database
+		for j := range istgtJobsData {
+			sqlStatement := `
+				INSERT INTO buildjobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+				ON CONFLICT (id) DO UPDATE
+				SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9
+				RETURNING id`
+			id := 0
+			err = database.Db.QueryRow(sqlStatement,
+				istgtPipelineData[i].ID,
+				istgtJobsData[j].ID,
+				istgtJobsData[j].Status,
+				istgtJobsData[j].Stage,
+				istgtJobsData[j].Name,
+				istgtJobsData[j].Ref,
+				istgtJobsData[j].CreatedAt,
+				istgtJobsData[j].StartedAt,
+				istgtJobsData[j].FinishedAt,
+				istgtJobsData[j].Commit.Message,
+				istgtJobsData[j].Commit.AuthorName,
+			).Scan(&id)
+			if err != nil {
+				glog.Error(err)
+			}
+			glog.Infoln("New record ID for istgt pipeline Jobs: ", id)
+		}
+	}
+	modifyBuildData()
+}
+
+func modifyBuildData() {
+	database.Db.QueryRow(`DELETE FROM buildpipeline WHERE id < (SELECT id FROM buildpipeline ORDER BY id DESC LIMIT 1 OFFSET 19)`)
+	return
 }
 
 // queryBuildData fetches the builddashboard data from the db
@@ -245,10 +438,7 @@ func getTriggerPipelineid(jobURL, platform string) (string, error) {
 	ps.Start()
 
 	// Run and get the output of grep.
-	value, err := grep.Output()
-	if err != nil {
-		return "", err
-	}
+	value, _ := grep.Output()
 	result := strings.Split(string(value), "\"")
 	if result[0] == "" {
 		return "0", nil
@@ -278,27 +468,67 @@ func jivaPipelineJobs(id int, token string) (BuildJobs, error) {
 }
 
 // mayaPipelineJobs will get pipeline jobs details from gitlab api
-// func mayaPipelineJobs(id int, token string) (BuildJobs, error) {
-// 	url := BaseURL + "api/v4/projects/" + MAYAID + "/pipelines/" + strconv.Itoa(id) + "/jobs"
-// 	req, err := http.NewRequest("GET", url, nil)
-// 	if err != nil {
-// 		fmt.Println(err)
-// 		return nil, err
-// 	}
-// 	req.Close = true
-// 	req.Header.Set("Connection", "close")
-// 	req.Header.Add("PRIVATE-TOKEN", token)
-// 	res, err := http.DefaultClient.Do(req)
-// 	if err != nil {
-// 		fmt.Println(err)
-// 		return nil, err
-// 	}
-// 	defer res.Body.Close()
-// 	body, _ := ioutil.ReadAll(res.Body)
-// 	var obj BuildJobs
-// 	json.Unmarshal(body, &obj)
-// 	return obj, nil
-// }
+func mayaPipelineJobs(id int, token string) (BuildJobs, error) {
+	url := BaseURL + "api/v4/projects/" + MAYAID + "/pipelines/" + strconv.Itoa(id) + "/jobs"
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Close = true
+	req.Header.Set("Connection", "close")
+	req.Header.Add("PRIVATE-TOKEN", token)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
+	var obj BuildJobs
+	json.Unmarshal(body, &obj)
+	return obj, nil
+}
+
+// zfsPipelineJobs will get pipeline jobs details from gitlab api
+func zfsPipelineJobs(id int, token string) (BuildJobs, error) {
+	url := BaseURL + "api/v4/projects/" + ZFSID + "/pipelines/" + strconv.Itoa(id) + "/jobs"
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Close = true
+	req.Header.Set("Connection", "close")
+	req.Header.Add("PRIVATE-TOKEN", token)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
+	var obj BuildJobs
+	json.Unmarshal(body, &obj)
+	return obj, nil
+}
+
+// istgtPipelineJobs will get pipeline jobs details from gitlab api
+func istgtPipelineJobs(id int, token string) (BuildJobs, error) {
+	url := BaseURL + "api/v4/projects/" + ISTGTID + "/pipelines/" + strconv.Itoa(id) + "/jobs"
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Close = true
+	req.Header.Set("Connection", "close")
+	req.Header.Add("PRIVATE-TOKEN", token)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
+	var obj BuildJobs
+	json.Unmarshal(body, &obj)
+	return obj, nil
+}
 
 // jivaPipeline get jiva pipeline data from gitlab
 func jivaPipeline(token string) (Pipeline, error) {
@@ -325,24 +555,64 @@ func jivaPipeline(token string) (Pipeline, error) {
 }
 
 // mayaPipeline get maya pipeline data from gitlab
-// func mayaPipeline(token string) (Pipeline, error) {
-// 	mayaURL := BaseURL + "api/v4/projects/" + MAYAID + "/pipelines?ref=master"
-// 	req, err := http.NewRequest("GET", mayaURL, nil)
-// 	if err != nil {
-// 		fmt.Println(err)
-// 		return nil, err
-// 	}
-// 	req.Header.Add("PRIVATE-TOKEN", token)
-// 	req.Close = true
-// 	req.Header.Set("Connection", "close")
-// 	res, err := http.DefaultClient.Do(req)
-// 	if err != nil {
-// 		fmt.Println(err)
-// 		return nil, err
-// 	}
-// 	defer res.Body.Close()
-// 	mayaData, _ := ioutil.ReadAll(res.Body)
-// 	var obj Pipeline
-// 	json.Unmarshal(mayaData, &obj)
-// 	return obj, nil
-// }
+func mayaPipeline(token string) (Pipeline, error) {
+	mayaURL := BaseURL + "api/v4/projects/" + MAYAID + "/pipelines?ref=master"
+	req, err := http.NewRequest("GET", mayaURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("PRIVATE-TOKEN", token)
+	req.Close = true
+	req.Header.Set("Connection", "close")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	mayaData, _ := ioutil.ReadAll(res.Body)
+	var obj Pipeline
+	json.Unmarshal(mayaData, &obj)
+	return obj, nil
+}
+
+// zfsPipeline get zfs pipeline data from gitlab
+func zfsPipeline(token string) (Pipeline, error) {
+	zfsURL := BaseURL + "api/v4/projects/" + ZFSID + "/pipelines"
+	req, err := http.NewRequest("GET", zfsURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("PRIVATE-TOKEN", token)
+	req.Close = true
+	req.Header.Set("Connection", "close")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	zfsData, _ := ioutil.ReadAll(res.Body)
+	var obj Pipeline
+	json.Unmarshal(zfsData, &obj)
+	return obj, nil
+}
+
+// istgtPipeline get istgt pipeline data from gitlab
+func istgtPipeline(token string) (Pipeline, error) {
+	istgtURL := BaseURL + "api/v4/projects/" + ISTGTID + "/pipelines"
+	req, err := http.NewRequest("GET", istgtURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("PRIVATE-TOKEN", token)
+	req.Close = true
+	req.Header.Set("Connection", "close")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	istgtData, _ := ioutil.ReadAll(res.Body)
+	var obj Pipeline
+	json.Unmarshal(istgtData, &obj)
+	return obj, nil
+}

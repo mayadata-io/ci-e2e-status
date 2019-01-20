@@ -10,6 +10,8 @@ const (
 	PACKETID = "6"
 	MAYAID   = "8"
 	JIVAID   = "7"
+	ISTGTID  = "18"
+	ZFSID    = "17"
 )
 
 // var token string

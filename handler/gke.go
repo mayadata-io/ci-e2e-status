@@ -31,7 +31,7 @@ func Gkehandler(w http.ResponseWriter, r *http.Request) {
 // GkeData from gitlab api for Gke and dump to database
 func GkeData(token string) {
 
-	gkePipelineID, err := database.Db.Query(`SELECT gke_trigger_pid FROM buildpipeline ORDER BY id DESC`)
+	gkePipelineID, err := database.Db.Query(`SELECT gke_trigger_pid FROM buildpipeline ORDER BY id DESC FETCH FIRST 20 ROWS ONLY`)
 	if err != nil {
 		glog.Error("GKE pipeline quering data Error:", err)
 	}
