@@ -34,13 +34,13 @@ func Buildhandler(w http.ResponseWriter, r *http.Request) {
 
 // BuildData from gitlab api and store to database
 func BuildData(token string) {
-	jivaPipelineData, err := jivaPipeline(token)
+	jivaPipelineData, err := pipelineData("jiva", token)
 	if err != nil {
 		glog.Error(err)
 		return
 	}
 	for i := range jivaPipelineData {
-		jivaJobsData, err := jivaPipelineJobs(jivaPipelineData[i].ID, token)
+		jivaJobsData, err := pipelineJobsData(jivaPipelineData[i].ID, token, "jiva")
 		if err != nil {
 			glog.Error(err)
 			return
@@ -112,13 +112,13 @@ func BuildData(token string) {
 		}
 	}
 
-	mayaPipelineData, err := mayaPipeline(token)
+	mayaPipelineData, err := pipelineData("maya", token)
 	if err != nil {
 		glog.Error(err)
 		return
 	}
 	for i := range mayaPipelineData {
-		mayaJobsData, err := mayaPipelineJobs(mayaPipelineData[i].ID, token)
+		mayaJobsData, err := pipelineJobsData(mayaPipelineData[i].ID, token, "maya")
 		if err != nil {
 			glog.Error(err)
 			return
@@ -190,13 +190,13 @@ func BuildData(token string) {
 		}
 	}
 
-	zfsPipelineData, err := zfsPipeline(token)
+	zfsPipelineData, err := pipelineData("zfs", token)
 	if err != nil {
 		glog.Error(err)
 		return
 	}
 	for i := range zfsPipelineData {
-		zfsJobsData, err := zfsPipelineJobs(zfsPipelineData[i].ID, token)
+		zfsJobsData, err := pipelineJobsData(zfsPipelineData[i].ID, token, "zfs")
 		if err != nil {
 			glog.Error(err)
 			return
@@ -268,13 +268,13 @@ func BuildData(token string) {
 		}
 	}
 
-	istgtPipelineData, err := istgtPipeline(token)
+	istgtPipelineData, err := pipelineData("istgt", token)
 	if err != nil {
 		glog.Error(err)
 		return
 	}
 	for i := range istgtPipelineData {
-		istgtJobsData, err := istgtPipelineJobs(istgtPipelineData[i].ID, token)
+		istgtJobsData, err := pipelineJobsData(istgtPipelineData[i].ID, token, "istgt")
 		if err != nil {
 			glog.Error(err)
 			return
@@ -447,8 +447,8 @@ func getTriggerPipelineid(jobURL, platform string) (string, error) {
 }
 
 // // jivaPipelineJobs will get pipeline jobs details from gitlab api
-func jivaPipelineJobs(id int, token string) (BuildJobs, error) {
-	url := BaseURL + "api/v4/projects/" + JIVAID + "/pipelines/" + strconv.Itoa(id) + "/jobs"
+func pipelineJobsData(id int, token string, project string) (BuildJobs, error) {
+	url := jobURLGenerator(id, project)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -461,16 +461,19 @@ func jivaPipelineJobs(id int, token string) (BuildJobs, error) {
 		return nil, err
 	}
 	defer res.Body.Close()
-	body, _ := ioutil.ReadAll(res.Body)
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
 	var obj BuildJobs
 	json.Unmarshal(body, &obj)
 	return obj, nil
 }
 
-// mayaPipelineJobs will get pipeline jobs details from gitlab api
-func mayaPipelineJobs(id int, token string) (BuildJobs, error) {
-	url := BaseURL + "api/v4/projects/" + MAYAID + "/pipelines/" + strconv.Itoa(id) + "/jobs"
-	req, err := http.NewRequest("GET", url, nil)
+// pipelineData will fetch the data from gitlab API
+func pipelineData(project, token string) (Pipeline, error) {
+	URL := pipelineURLGenerator(project)
+	req, err := http.NewRequest("GET", URL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -482,137 +485,48 @@ func mayaPipelineJobs(id int, token string) (BuildJobs, error) {
 		return nil, err
 	}
 	defer res.Body.Close()
-	body, _ := ioutil.ReadAll(res.Body)
-	var obj BuildJobs
-	json.Unmarshal(body, &obj)
-	return obj, nil
-}
-
-// zfsPipelineJobs will get pipeline jobs details from gitlab api
-func zfsPipelineJobs(id int, token string) (BuildJobs, error) {
-	url := BaseURL + "api/v4/projects/" + ZFSID + "/pipelines/" + strconv.Itoa(id) + "/jobs"
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Close = true
-	req.Header.Set("Connection", "close")
-	req.Header.Add("PRIVATE-TOKEN", token)
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-	body, _ := ioutil.ReadAll(res.Body)
-	var obj BuildJobs
-	json.Unmarshal(body, &obj)
-	return obj, nil
-}
-
-// istgtPipelineJobs will get pipeline jobs details from gitlab api
-func istgtPipelineJobs(id int, token string) (BuildJobs, error) {
-	url := BaseURL + "api/v4/projects/" + ISTGTID + "/pipelines/" + strconv.Itoa(id) + "/jobs"
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Close = true
-	req.Header.Set("Connection", "close")
-	req.Header.Add("PRIVATE-TOKEN", token)
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-	body, _ := ioutil.ReadAll(res.Body)
-	var obj BuildJobs
-	json.Unmarshal(body, &obj)
-	return obj, nil
-}
-
-// jivaPipeline get jiva pipeline data from gitlab
-func jivaPipeline(token string) (Pipeline, error) {
-	jivaURL := BaseURL + "api/v4/projects/" + JIVAID + "/pipelines?ref=master"
-	req, err := http.NewRequest("GET", jivaURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Close = true
-	req.Header.Set("Connection", "close")
-	req.Header.Add("PRIVATE-TOKEN", token)
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-	jivaData, err := ioutil.ReadAll(res.Body)
+	data, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}
 	var obj Pipeline
-	json.Unmarshal(jivaData, &obj)
+	json.Unmarshal(data, &obj)
 	return obj, nil
 }
 
-// mayaPipeline get maya pipeline data from gitlab
-func mayaPipeline(token string) (Pipeline, error) {
-	mayaURL := BaseURL + "api/v4/projects/" + MAYAID + "/pipelines?ref=master"
-	req, err := http.NewRequest("GET", mayaURL, nil)
-	if err != nil {
-		return nil, err
+// genearete pipeline url according to project name
+func pipelineURLGenerator(project string) string {
+	projectID := ""
+	Branch := ""
+	if project == "maya" {
+		projectID = MAYAID
+		Branch = "master"
+	} else if project == "jiva" {
+		projectID = JIVAID
+		Branch = "master"
+	} else if project == "istgt" {
+		projectID = ISTGTID
+		Branch = "replication"
+	} else if project == "zfs" {
+		projectID = ZFSID
+		Branch = "zfs-0.7-release"
 	}
-	req.Header.Add("PRIVATE-TOKEN", token)
-	req.Close = true
-	req.Header.Set("Connection", "close")
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-	mayaData, _ := ioutil.ReadAll(res.Body)
-	var obj Pipeline
-	json.Unmarshal(mayaData, &obj)
-	return obj, nil
+	generatedURL := BaseURL + "api/v4/projects/" + projectID + "/pipelines?ref=" + Branch
+	return generatedURL
 }
 
-// zfsPipeline get zfs pipeline data from gitlab
-func zfsPipeline(token string) (Pipeline, error) {
-	zfsURL := BaseURL + "api/v4/projects/" + ZFSID + "/pipelines"
-	req, err := http.NewRequest("GET", zfsURL, nil)
-	if err != nil {
-		return nil, err
+// genearete pipeline job url according to project name
+func jobURLGenerator(id int, project string) string {
+	projectID := ""
+	if project == "maya" {
+		projectID = MAYAID
+	} else if project == "jiva" {
+		projectID = JIVAID
+	} else if project == "istgt" {
+		projectID = ISTGTID
+	} else if project == "zfs" {
+		projectID = ZFSID
 	}
-	req.Header.Add("PRIVATE-TOKEN", token)
-	req.Close = true
-	req.Header.Set("Connection", "close")
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-	zfsData, _ := ioutil.ReadAll(res.Body)
-	var obj Pipeline
-	json.Unmarshal(zfsData, &obj)
-	return obj, nil
-}
-
-// istgtPipeline get istgt pipeline data from gitlab
-func istgtPipeline(token string) (Pipeline, error) {
-	istgtURL := BaseURL + "api/v4/projects/" + ISTGTID + "/pipelines"
-	req, err := http.NewRequest("GET", istgtURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("PRIVATE-TOKEN", token)
-	req.Close = true
-	req.Header.Set("Connection", "close")
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-	istgtData, _ := ioutil.ReadAll(res.Body)
-	var obj Pipeline
-	json.Unmarshal(istgtData, &obj)
-	return obj, nil
+	generatedURL := BaseURL + "api/v4/projects/" + projectID + "/pipelines/" + strconv.Itoa(id) + "/jobs"
+	return generatedURL
 }

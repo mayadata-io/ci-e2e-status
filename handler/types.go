@@ -67,6 +67,12 @@ type Jobssummary struct {
 	FinishedAt string `json:"finished_at"`
 }
 
+// TriggredID contains the details of a gitlab pipelines
+type TriggredID struct {
+	ID       int `json:"id"`
+	BuildPID int `json:"gke_trigger_pid"`
+}
+
 // pipelineSummary contains the details of a gitlab pipelines
 type pipelineSummary struct {
 	ID     int           `json:"id"`

@@ -30,15 +30,15 @@ func Gkehandler(w http.ResponseWriter, r *http.Request) {
 
 // GkeData from gitlab api for Gke and dump to database
 func GkeData(token string) {
-
-	gkePipelineID, err := database.Db.Query(`SELECT gke_trigger_pid FROM buildpipeline ORDER BY id DESC FETCH FIRST 20 ROWS ONLY`)
+	gkePipelineID, err := database.Db.Query(`SELECT id,gke_trigger_pid FROM buildpipeline ORDER BY id DESC FETCH FIRST 20 ROWS ONLY`)
 	if err != nil {
 		glog.Error("GKE pipeline quering data Error:", err)
 	}
 	for gkePipelineID.Next() {
 		var logURL = ""
-		pipelinedata := pipelineSummary{}
+		pipelinedata := TriggredID{}
 		err = gkePipelineID.Scan(
+			&pipelinedata.BuildPID,
 			&pipelinedata.ID,
 		)
 		gkePipelineData, err := gkePipeline(token, pipelinedata.ID)
@@ -53,11 +53,14 @@ func GkeData(token string) {
 			logURL = Kibanaloglink(gkePipelineData.Sha, gkePipelineData.ID, gkePipelineData.Status, jobStartedAt, JobFinishedAt)
 		}
 		sqlStatement := `
-			INSERT INTO gkepipeline (id, sha, ref, status, web_url, kibana_url)
-			VALUES ($1, $2, $3, $4, $5, $6)
+			INSERT INTO gkepipeline (build_pipelineid, id, sha, ref, status, web_url, kibana_url)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
+			ON CONFLICT (build_pipelineid) DO UPDATE
+			SET id = $2, status = $5, kibana_url = $7
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
+			pipelinedata.BuildPID,
 			gkePipelineData.ID,
 			gkePipelineData.Sha,
 			gkePipelineData.Ref,
@@ -162,7 +165,7 @@ func gkePipelineJobs(pipelineID int, token string) (Jobs, error) {
 // QueryGkeData fetch the pipeline data as well as jobs data form gke table of database
 func QueryGkeData(datas *dashboard) error {
 	// Select all data from packetpipeline table of DB
-	pipelinerows, err := database.Db.Query(`SELECT * FROM gkepipeline ORDER BY id DESC`)
+	pipelinerows, err := database.Db.Query(`SELECT id,sha,ref,status,web_url,kibana_url FROM gkepipeline ORDER BY build_pipelineid DESC`)
 	if err != nil {
 		glog.Error("GKE pipeline quering data Error:", err)
 	}

@@ -51,7 +51,7 @@ func createTable() {
 	pipelineJobs := []string{"gkejobs", "aksjobs", "eksjobs"}
 	// Create pipeline table in database
 	for i := range pipeline {
-		query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(id INT, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, kibana_url VARCHAR);", pipeline[i])
+		query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(build_pipelineid INT PRIMARY KEY, id INT, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, kibana_url VARCHAR);", pipeline[i])
 		_, err := Db.Query(query)
 		if err != nil {
 			glog.Error(err)
