@@ -35,7 +35,7 @@ func GkeData(token string) {
 		glog.Error("GKE pipeline quering data Error:", err)
 	}
 	for gkePipelineID.Next() {
-		var logURL = ""
+		var logURL string
 		pipelinedata := TriggredID{}
 		err = gkePipelineID.Scan(
 			&pipelinedata.BuildPID,
@@ -56,7 +56,7 @@ func GkeData(token string) {
 			INSERT INTO gkepipeline (build_pipelineid, id, sha, ref, status, web_url, kibana_url)
 			VALUES ($1, $2, $3, $4, $5, $6, $7)
 			ON CONFLICT (build_pipelineid) DO UPDATE
-			SET id = $2, status = $5, kibana_url = $7
+			SET id = $2, sha = $3, ref = $4 status = $5, web_url = $6, kibana_url = $7
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
@@ -103,7 +103,7 @@ func GkeData(token string) {
 
 // gkePipeline will get data from gitlab api and store to DB
 func gkePipeline(token string, pipelineID int) (*PlatformPipeline, error) {
-	dummyJSON := []byte(`{"id":0,"sha":"0000000000000000000000000000000000000000","ref":"none","status":"none","web_url":"none"}`)
+	dummyJSON := []byte(`{"id":0,"sha":"00000000000000000000","ref":"none","status":"none","web_url":"none"}`)
 	if pipelineID == 0 {
 		var obj PlatformPipeline
 		json.Unmarshal(dummyJSON, &obj)

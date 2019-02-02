@@ -66,7 +66,7 @@ func createTable() {
 		}
 	}
 	// create build pipelines table for build related r/w operation
-	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS buildpipeline(id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, gke_trigger_pid VARCHAR, eks_trigger_pid VARCHAR, aks_trigger_pid VARCHAR);")
+	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS buildpipeline(project VARCHAR, id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, gke_trigger_pid VARCHAR, eks_trigger_pid VARCHAR, aks_trigger_pid VARCHAR);")
 	_, err := Db.Query(query)
 	if err != nil {
 		glog.Error(err)

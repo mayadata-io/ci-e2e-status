@@ -39,6 +39,7 @@ func BuildData(token string) {
 		glog.Error(err)
 		return
 	}
+	project = "jiva"
 	for i := range jivaPipelineData {
 		jivaJobsData, err := pipelineJobsData(jivaPipelineData[i].ID, token, "jiva")
 		if err != nil {
@@ -64,13 +65,14 @@ func BuildData(token string) {
 		}
 		// Add jiva pipelines data to Database
 		sqlStatement := `
-			INSERT INTO buildpipeline (id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid, aks_trigger_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			INSERT INTO buildpipeline (project, id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid, aks_trigger_pid)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 			ON CONFLICT (id) DO UPDATE
 			SET status = $4, gke_trigger_pid = $6, eks_trigger_pid = $7, aks_trigger_pid = $8
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
+			project,
 			jivaPipelineData[i].ID,
 			jivaPipelineData[i].Sha,
 			jivaPipelineData[i].Ref,
@@ -114,6 +116,7 @@ func BuildData(token string) {
 		}
 	}
 
+	project = "maya"
 	mayaPipelineData, err := pipelineData("maya", token)
 	if err != nil {
 		glog.Error(err)
@@ -144,13 +147,14 @@ func BuildData(token string) {
 		}
 		// Add maya pipelines data to Database
 		sqlStatement := `
-			INSERT INTO buildpipeline (id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid, aks_trigger_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			INSERT INTO buildpipeline (project, id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid, aks_trigger_pid)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 			ON CONFLICT (id) DO UPDATE
 			SET status = $4, gke_trigger_pid = $6, eks_trigger_pid = $7, aks_trigger_pid = $8
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
+			project,
 			mayaPipelineData[i].ID,
 			mayaPipelineData[i].Sha,
 			mayaPipelineData[i].Ref,
@@ -194,6 +198,7 @@ func BuildData(token string) {
 		}
 	}
 
+	project = "zfs"
 	zfsPipelineData, err := pipelineData("zfs", token)
 	if err != nil {
 		glog.Error(err)
@@ -224,13 +229,14 @@ func BuildData(token string) {
 		}
 		// Add zfs pipelines data to Database
 		sqlStatement := `
-			INSERT INTO buildpipeline (id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid, aks_trigger_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			INSERT INTO buildpipeline (project, id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid, aks_trigger_pid)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 			ON CONFLICT (id) DO UPDATE
 			SET status = $4, gke_trigger_pid = $6, eks_trigger_pid = $7, aks_trigger_pid = $8
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
+			project,
 			zfsPipelineData[i].ID,
 			zfsPipelineData[i].Sha,
 			zfsPipelineData[i].Ref,
@@ -274,6 +280,7 @@ func BuildData(token string) {
 		}
 	}
 
+	project = "istgt"
 	istgtPipelineData, err := pipelineData("istgt", token)
 	if err != nil {
 		glog.Error(err)
@@ -304,13 +311,14 @@ func BuildData(token string) {
 		}
 		// Add istgt pipelines data to Database
 		sqlStatement := `
-			INSERT INTO buildpipeline (id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid, aks_trigger_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			INSERT INTO buildpipeline (project, id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid, aks_trigger_pid)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 			ON CONFLICT (id) DO UPDATE
 			SET status = $4, gke_trigger_pid = $6, eks_trigger_pid = $7, aks_trigger_pid = $8
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
+			project,
 			istgtPipelineData[i].ID,
 			istgtPipelineData[i].Sha,
 			istgtPipelineData[i].Ref,
@@ -371,6 +379,7 @@ func queryBuildData(datas *Builddashboard) error {
 	for pipelinerows.Next() {
 		pipelinedata := BuildpipelineSummary{}
 		err = pipelinerows.Scan(
+			&pipelinedata.Project,
 			&pipelinedata.ID,
 			&pipelinedata.Sha,
 			&pipelinedata.Ref,
@@ -378,6 +387,7 @@ func queryBuildData(datas *Builddashboard) error {
 			&pipelinedata.WebURL,
 			&pipelinedata.GKETriggerPID,
 			&pipelinedata.EKSTriggerPID,
+			&pipelinedata.AKSTriggerPID,
 		)
 		if err != nil {
 			return err

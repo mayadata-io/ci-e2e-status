@@ -23,6 +23,8 @@ const (
 	ZFSBRANCH   = "zfs-0.7-release"
 )
 
+var project string
+
 const (
 	token = "TOKEN"
 )
@@ -131,6 +133,7 @@ type BuildJobssummary struct {
 
 // BuildpipelineSummary contains the details of a builds pipelines
 type BuildpipelineSummary struct {
+	Project       string             `json:"project"`
 	ID            int                `json:"id"`
 	Sha           string             `json:"sha"`
 	Ref           string             `json:"ref"`
@@ -138,6 +141,7 @@ type BuildpipelineSummary struct {
 	WebURL        string             `json:"web_url"`
 	GKETriggerPID string             `json:"gke_trigger_pid"`
 	EKSTriggerPID string             `json:"eks_trigger_pid"`
+	AKSTriggerPID string             `json:"aks_trigger_pid"`
 	Jobs          []BuildJobssummary `json:"jobs"`
 }
 
