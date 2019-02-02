@@ -45,18 +45,20 @@ func BuildData(token string) {
 			glog.Error(err)
 			return
 		}
+		// Getting webURL link for getting triggredID
+		baselineJobsWebURL := getBaselineJobWebURL(jivaJobsData)
 		// Get GKE, Triggred pipeline ID for jiva build
-		gkeTriggerID, err := getTriggerPipelineid(jivaJobsData[1].WebURL, "e2e-gke")
+		gkeTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-gke")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get EKS, Triggred pipeline ID for jiva build
-		eksTriggerID, err := getTriggerPipelineid(jivaJobsData[1].WebURL, "e2e-eks")
+		eksTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-eks")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get AKS, Triggred pipeline ID for jiva build
-		aksTriggerID, err := getTriggerPipelineid(jivaJobsData[1].WebURL, "e2e-azure")
+		aksTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-azure")
 		if err != nil {
 			glog.Error(err)
 		}
@@ -123,18 +125,20 @@ func BuildData(token string) {
 			glog.Error(err)
 			return
 		}
+		// Getting webURL link for getting triggredID
+		baselineJobsWebURL := getBaselineJobWebURL(mayaJobsData)
 		// Get GKE, Triggred pipeline ID for maya build
-		gkeTriggerID, err := getTriggerPipelineid(mayaJobsData[1].WebURL, "e2e-gke")
+		gkeTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-gke")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get EKS, Triggred pipeline ID for maya build
-		eksTriggerID, err := getTriggerPipelineid(mayaJobsData[1].WebURL, "e2e-eks")
+		eksTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-eks")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get AKS, Triggred pipeline ID for maya build
-		aksTriggerID, err := getTriggerPipelineid(mayaJobsData[1].WebURL, "e2e-azure")
+		aksTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-azure")
 		if err != nil {
 			glog.Error(err)
 		}
@@ -201,18 +205,20 @@ func BuildData(token string) {
 			glog.Error(err)
 			return
 		}
+		// Getting webURL link for getting triggredID
+		baselineJobsWebURL := getBaselineJobWebURL(zfsJobsData)
 		// Get GKE, Triggred pipeline ID for zfs build
-		gkeTriggerID, err := getTriggerPipelineid(zfsJobsData[2].WebURL, "e2e-gke")
+		gkeTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-gke")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get EKS, Triggred pipeline ID for zfs build
-		eksTriggerID, err := getTriggerPipelineid(zfsJobsData[2].WebURL, "e2e-eks")
+		eksTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-eks")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get EKS, Triggred pipeline ID for zfs build
-		aksTriggerID, err := getTriggerPipelineid(zfsJobsData[2].WebURL, "e2e-azure")
+		aksTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-azure")
 		if err != nil {
 			glog.Error(err)
 		}
@@ -279,18 +285,20 @@ func BuildData(token string) {
 			glog.Error(err)
 			return
 		}
+		// Getting webURL link for getting triggredID
+		baselineJobsWebURL := getBaselineJobWebURL(istgtJobsData)
 		// Get GKE, Triggred pipeline ID for istgt build
-		gkeTriggerID, err := getTriggerPipelineid(istgtJobsData[1].WebURL, "e2e-gke")
+		gkeTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-gke")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get EKS, Triggred pipeline ID for istgt build
-		eksTriggerID, err := getTriggerPipelineid(istgtJobsData[1].WebURL, "e2e-eks")
+		eksTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-eks")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get AKS, Triggred pipeline ID for istgt build
-		aksTriggerID, err := getTriggerPipelineid(istgtJobsData[1].WebURL, "e2e-azure")
+		aksTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-azure")
 		if err != nil {
 			glog.Error(err)
 		}
@@ -428,7 +436,7 @@ func getTriggerPipelineid(jobURL, platform string) (string, error) {
 	body, _ := ioutil.ReadAll(res.Body)
 	data := string(body)
 
-	grep := exec.Command("grep", "-oP", "(?<="+platform+"/pipelines/)[^ ]*")
+	grep := exec.Command("grep", "-oP", "(?<="+GROUPNAME+"/"+platform+"/pipelines/)[^ ]*")
 	ps := exec.Command("echo", data)
 
 	// Get ps's stdout and attach it to grep's stdin.
@@ -496,20 +504,19 @@ func pipelineData(project, token string) (Pipeline, error) {
 
 // genearete pipeline url according to project name
 func pipelineURLGenerator(project string) string {
-	projectID := ""
-	Branch := ""
+	var projectID, Branch string
 	if project == "maya" {
 		projectID = MAYAID
-		Branch = "master"
+		Branch = MAYABRANCH
 	} else if project == "jiva" {
 		projectID = JIVAID
-		Branch = "master"
+		Branch = JIVABRANCH
 	} else if project == "istgt" {
 		projectID = ISTGTID
-		Branch = "replication"
+		Branch = ISTGTBRANCH
 	} else if project == "zfs" {
 		projectID = ZFSID
-		Branch = "zfs-0.7-release"
+		Branch = ZFSBRANCH
 	}
 	generatedURL := BaseURL + "api/v4/projects/" + projectID + "/pipelines?ref=" + Branch
 	return generatedURL
@@ -517,7 +524,7 @@ func pipelineURLGenerator(project string) string {
 
 // genearete pipeline job url according to project name
 func jobURLGenerator(id int, project string) string {
-	projectID := ""
+	var projectID string
 	if project == "maya" {
 		projectID = MAYAID
 	} else if project == "jiva" {
@@ -529,4 +536,13 @@ func jobURLGenerator(id int, project string) string {
 	}
 	generatedURL := BaseURL + "api/v4/projects/" + projectID + "/pipelines/" + strconv.Itoa(id) + "/jobs"
 	return generatedURL
+}
+
+func getBaselineJobWebURL(data BuildJobs) string {
+	for _, value := range data {
+		if value.Stage == "baseline" {
+			return value.WebURL
+		}
+	}
+	return ""
 }

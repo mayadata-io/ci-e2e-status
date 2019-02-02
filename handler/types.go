@@ -14,7 +14,14 @@ const (
 	ZFSID    = "17"
 )
 
-// var token string
+// BranchName assignment from gitlab repository
+const (
+	GROUPNAME   = "openebs"
+	MAYABRANCH  = "master"
+	JIVABRANCH  = "master"
+	ISTGTBRANCH = "replication"
+	ZFSBRANCH   = "zfs-0.7-release"
+)
 
 const (
 	token = "TOKEN"
