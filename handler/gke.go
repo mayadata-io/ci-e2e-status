@@ -18,12 +18,12 @@ func Gkehandler(w http.ResponseWriter, r *http.Request) {
 	err := QueryGkeData(&datas)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
-		glog.Error("query gke Data Error:", err)
+		glog.Error(err)
 	}
 	out, err := json.Marshal(datas)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
-		glog.Error("Marshalling queried data Error:", err)
+		glog.Error(err)
 	}
 	w.Write(out)
 }
@@ -33,6 +33,7 @@ func GkeData(token string) {
 	gkePipelineID, err := database.Db.Query(`SELECT id,gke_trigger_pid FROM buildpipeline ORDER BY id DESC FETCH FIRST 20 ROWS ONLY`)
 	if err != nil {
 		glog.Error("GKE pipeline quering data Error:", err)
+		return
 	}
 	for gkePipelineID.Next() {
 		var logURL string
@@ -42,9 +43,13 @@ func GkeData(token string) {
 			&pipelinedata.ID,
 		)
 		gkePipelineData, err := gkePipeline(token, pipelinedata.ID)
+		if err != nil {
+			glog.Error(err)
+			return
+		}
 		pipelineJobsdata, err := gkePipelineJobs(gkePipelineData.ID, token)
 		if err != nil {
-			glog.Error("GKE pipeline function return Error:", err)
+			glog.Error(err)
 			return
 		}
 		if pipelinedata.ID != 0 {
@@ -69,9 +74,9 @@ func GkeData(token string) {
 			logURL,
 		).Scan(&id)
 		if err != nil {
-			glog.Error("GKE pipeline data insertion Error:", err)
+			glog.Error(err)
 		}
-		glog.Infof("New record ID for GKE Pipeline:", id)
+		glog.Infoln("New record ID for GKE Pipeline:", id)
 		if pipelinedata.ID != 0 {
 			for j := range pipelineJobsdata {
 				sqlStatement := `
@@ -93,7 +98,7 @@ func GkeData(token string) {
 					pipelineJobsdata[j].FinishedAt,
 				).Scan(&id)
 				if err != nil {
-					glog.Error("GKE pipeline jobs data insertion Error:", err)
+					glog.Error(err)
 				}
 				glog.Infof("New record ID for GKE Jobs: %s", id)
 			}
@@ -113,7 +118,6 @@ func gkePipeline(token string, pipelineID int) (*PlatformPipeline, error) {
 	url := BaseURL + "api/v4/projects/" + GKEID + "/pipelines/" + strconv.Itoa(pipelineID)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		glog.Error("GKE pipeline data request Error:", err)
 		return nil, err
 	}
 	req.Close = true
@@ -122,7 +126,6 @@ func gkePipeline(token string, pipelineID int) (*PlatformPipeline, error) {
 	req.Header.Add("PRIVATE-TOKEN", token)
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		glog.Error("GKE pipeline data response Error:", err)
 		return nil, err
 	}
 	defer res.Body.Close()
@@ -142,7 +145,6 @@ func gkePipelineJobs(pipelineID int, token string) (Jobs, error) {
 	url := BaseURL + "api/v4/projects/" + GKEID + "/pipelines/" + strconv.Itoa(pipelineID) + "/jobs?per_page=50"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		glog.Error("GKE pipeline jobs data request Error:", err)
 		return nil, err
 	}
 	req.Close = true
@@ -151,7 +153,6 @@ func gkePipelineJobs(pipelineID int, token string) (Jobs, error) {
 	req.Header.Add("PRIVATE-TOKEN", token)
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		glog.Error("GKE pipeline jobs data response Error:", err)
 		return nil, err
 	}
 	defer res.Body.Close()
@@ -167,7 +168,7 @@ func QueryGkeData(datas *dashboard) error {
 	// Select all data from packetpipeline table of DB
 	pipelinerows, err := database.Db.Query(`SELECT id,sha,ref,status,web_url,kibana_url FROM gkepipeline ORDER BY build_pipelineid DESC`)
 	if err != nil {
-		glog.Error("GKE pipeline quering data Error:", err)
+		return err
 	}
 	// Close DB connection after r/w operation
 	defer pipelinerows.Close()
@@ -183,13 +184,13 @@ func QueryGkeData(datas *dashboard) error {
 			&pipelinedata.LogURL,
 		)
 		if err != nil {
-			glog.Error("GKE pipeline row data read Error:", err)
+			return err
 		}
 		// Query gkejobs data of respective pipeline using pipelineID from gkejobs table
 		jobsquery := `SELECT * FROM gkejobs WHERE pipelineid = $1 ORDER BY id`
 		jobsrows, err := database.Db.Query(jobsquery, pipelinedata.ID)
 		if err != nil {
-			glog.Error("GKE pipeline jobs quering data Error:", err)
+			return err
 		}
 		// Close DB connection after r/w operation
 		defer jobsrows.Close()
@@ -209,7 +210,7 @@ func QueryGkeData(datas *dashboard) error {
 				&jobsdata.FinishedAt,
 			)
 			if err != nil {
-				glog.Error("GKE pipeline jobs row data read Error:", err)
+				return err
 			}
 			// Append each row data to an array(jobsDataArray)
 			jobsdataarray = append(jobsdataarray, jobsdata)
@@ -221,7 +222,7 @@ func QueryGkeData(datas *dashboard) error {
 	}
 	err = pipelinerows.Err()
 	if err != nil {
-		glog.Error("GKE pipelineRows Error:", err)
+		return err
 	}
 	return nil
 }

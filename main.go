@@ -15,10 +15,7 @@ func main() {
 
 	// Return value to all / api path
 	http.HandleFunc("/gke", handler.Gkehandler)
-	// http.HandleFunc("/aws", handler.Awshandler)
-	// http.HandleFunc("/gcp", handler.Gcphandler)
 	// http.HandleFunc("/aks", handler.Akshandler)
-	// http.HandleFunc("/packet", handler.Packethandler)
 	// http.HandleFunc("/eks", handler.Ekshandler)
 	http.HandleFunc("/build", handler.Buildhandler)
 	glog.Infof("Listening on http://localhost:3000")
