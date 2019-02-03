@@ -2,7 +2,7 @@ FROM golang:latest
 
 RUN go get github.com/lib/pq
 
-RUN go get github.com/sirupsen/logrus 
+RUN go get github.com/golang/glog
 
 RUN mkdir /app
 
@@ -14,10 +14,8 @@ ADD . $GOPATH/src/github.com/openebs/ci-e2e-dashboard-go-backend
 
 WORKDIR $GOPATH/src/github.com/openebs/ci-e2e-dashboard-go-backend
 
-RUN chmod 777 config
-
 RUN go build -o /app/main .
 
-RUN bash config
-
 CMD ["/app/main"]
+
+EXPOSE 3000

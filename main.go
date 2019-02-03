@@ -15,12 +15,12 @@ func main() {
 
 	// Return value to all / api path
 	http.HandleFunc("/gke", handler.Gkehandler)
-	// http.HandleFunc("/aks", handler.Akshandler)
-	// http.HandleFunc("/eks", handler.Ekshandler)
+	http.HandleFunc("/aks", handler.Akshandler)
+	http.HandleFunc("/eks", handler.Ekshandler)
 	http.HandleFunc("/build", handler.Buildhandler)
-	glog.Infof("Listening on http://localhost:3000")
+	glog.Infof("Listening on http://0.0.0.0:3000")
 
 	// Trigger db update function
 	go handler.UpdateDatabase()
-	glog.Info(http.ListenAndServe("localhost:3000", nil))
+	glog.Info(http.ListenAndServe(":"+"3000", nil))
 }

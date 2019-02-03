@@ -21,17 +21,17 @@ spec:
         - name: TOKEN
           value: ""
         - name: DBHOST
-          value: ""
+          value: "pgset-primary"
         - name: DBPORT
-          value: ""
+          value: "5432"
         - name: DBUSER
-          value: ""
+          value: "postgres"
         - name: DBPASS
-          value: ""
+          value: "password"
         - name: DBNAME
-          value: ""
+          value: "postgres"
         name: openebs-ci-backend
-        image: chandankumar4/database:v3
+        image: chandankumar4/database:latest
         imagePullPolicy: Always
         ports:
           - containerPort: 3000
@@ -43,7 +43,7 @@ kind: Service
 metadata:
   labels:
     app: openebs-ci-backend
-  name: openebs-ci-backend-service
+  name: openebs-ci-backend
   namespace: default
 spec:
   ports:
@@ -51,6 +51,7 @@ spec:
     port: 3000
     protocol: TCP
     targetPort: 3000
+    nodePort: 30002
   selector:
     app: openebs-ci-backend
-  type: ClusterIP     
+  type: NodePort     
