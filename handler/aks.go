@@ -10,12 +10,12 @@ import (
 	"github.com/openebs/ci-e2e-dashboard-go-backend/database"
 )
 
-// Gkehandler return gke pipeline data to /gke path
-func Gkehandler(w http.ResponseWriter, r *http.Request) {
+// Akshandler return aks pipeline data to /aks path
+func Akshandler(w http.ResponseWriter, r *http.Request) {
 	// Allow cross origin request
 	(w).Header().Set("Access-Control-Allow-Origin", "*")
 	datas := dashboard{}
-	err := QueryGkeData(&datas)
+	err := QueryAksData(&datas)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		glog.Error(err)
@@ -28,26 +28,26 @@ func Gkehandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
-// GkeData from gitlab api for Gke and dump to database
-func GkeData(token string) {
-	gkePipelineID, err := database.Db.Query(`SELECT id,gke_trigger_pid FROM buildpipeline ORDER BY id DESC FETCH FIRST 20 ROWS ONLY`)
+// AksData from gitlab api for Aks and dump to database
+func AksData(token string) {
+	aksPipelineID, err := database.Db.Query(`SELECT id,aks_trigger_pid FROM buildpipeline ORDER BY id DESC FETCH FIRST 20 ROWS ONLY`)
 	if err != nil {
-		glog.Error("GKE pipeline quering data Error:", err)
+		glog.Error("AKS pipeline quering data Error:", err)
 		return
 	}
-	for gkePipelineID.Next() {
+	for aksPipelineID.Next() {
 		var logURL string
 		pipelinedata := TriggredID{}
-		err = gkePipelineID.Scan(
+		err = aksPipelineID.Scan(
 			&pipelinedata.BuildPID,
 			&pipelinedata.ID,
 		)
-		gkePipelineData, err := gkePipeline(token, pipelinedata.ID)
+		aksPipelineData, err := aksPipeline(token, pipelinedata.ID)
 		if err != nil {
 			glog.Error(err)
 			return
 		}
-		pipelineJobsdata, err := gkePipelineJobs(gkePipelineData.ID, token)
+		pipelineJobsdata, err := aksPipelineJobs(aksPipelineData.ID, token)
 		if err != nil {
 			glog.Error(err)
 			return
@@ -55,10 +55,10 @@ func GkeData(token string) {
 		if pipelinedata.ID != 0 {
 			jobStartedAt := pipelineJobsdata[0].StartedAt
 			JobFinishedAt := pipelineJobsdata[len(pipelineJobsdata)-1].FinishedAt
-			logURL = Kibanaloglink(gkePipelineData.Sha, gkePipelineData.ID, gkePipelineData.Status, jobStartedAt, JobFinishedAt)
+			logURL = Kibanaloglink(aksPipelineData.Sha, aksPipelineData.ID, aksPipelineData.Status, jobStartedAt, JobFinishedAt)
 		}
 		sqlStatement := `
-			INSERT INTO gkepipeline (build_pipelineid, id, sha, ref, status, web_url, kibana_url)
+			INSERT INTO akspipeline (build_pipelineid, id, sha, ref, status, web_url, kibana_url)
 			VALUES ($1, $2, $3, $4, $5, $6, $7)
 			ON CONFLICT (build_pipelineid) DO UPDATE
 			SET id = $2, sha = $3, ref = $4, status = $5, web_url = $6, kibana_url = $7
@@ -66,28 +66,28 @@ func GkeData(token string) {
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
 			pipelinedata.BuildPID,
-			gkePipelineData.ID,
-			gkePipelineData.Sha,
-			gkePipelineData.Ref,
-			gkePipelineData.Status,
-			gkePipelineData.WebURL,
+			aksPipelineData.ID,
+			aksPipelineData.Sha,
+			aksPipelineData.Ref,
+			aksPipelineData.Status,
+			aksPipelineData.WebURL,
 			logURL,
 		).Scan(&id)
 		if err != nil {
 			glog.Error(err)
 		}
-		glog.Infoln("New record ID for GKE Pipeline:", id)
+		glog.Infoln("New record ID for AKS Pipeline:", id)
 		if pipelinedata.ID != 0 {
 			for j := range pipelineJobsdata {
 				sqlStatement := `
-					INSERT INTO gkejobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at)
+					INSERT INTO aksjobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at)
 					VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 					ON CONFLICT (id) DO UPDATE
 					SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9
 					RETURNING id`
 				id := 0
 				err = database.Db.QueryRow(sqlStatement,
-					gkePipelineData.ID,
+					aksPipelineData.ID,
 					pipelineJobsdata[j].ID,
 					pipelineJobsdata[j].Status,
 					pipelineJobsdata[j].Stage,
@@ -100,22 +100,22 @@ func GkeData(token string) {
 				if err != nil {
 					glog.Error(err)
 				}
-				glog.Infof("New record ID for GKE Jobs: %s", id)
+				glog.Infof("New record ID for AKS Jobs: %s", id)
 			}
 		}
 	}
 }
 
-// gkePipeline will get data from gitlab api and store to DB
-func gkePipeline(token string, pipelineID int) (*PlatformPipeline, error) {
+// aksPipeline will get data from gitlab api and store to DB
+func aksPipeline(token string, pipelineID int) (*PlatformPipeline, error) {
 	dummyJSON := []byte(`{"id":0,"sha":"00000000000000000000","ref":"none","status":"none","web_url":"none"}`)
 	if pipelineID == 0 {
 		var obj PlatformPipeline
 		json.Unmarshal(dummyJSON, &obj)
 		return &obj, nil
 	}
-	// Store gke pipeline data form gitlab api to gkeObj
-	url := BaseURL + "api/v4/projects/" + GKEID + "/pipelines/" + strconv.Itoa(pipelineID)
+	// Store aks pipeline data form gitlab api to aksObj
+	url := BaseURL + "api/v4/projects/" + AKSID + "/pipelines/" + strconv.Itoa(pipelineID)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -136,13 +136,13 @@ func gkePipeline(token string, pipelineID int) (*PlatformPipeline, error) {
 	return &obj, nil
 }
 
-// gkePipelineJobs will get pipeline jobs details from gitlab jobs api
-func gkePipelineJobs(pipelineID int, token string) (Jobs, error) {
-	// Generate pipeline jobs api url using BaseURL, pipelineID and GKEID
+// aksPipelineJobs will get pipeline jobs details from gitlab jobs api
+func aksPipelineJobs(pipelineID int, token string) (Jobs, error) {
+	// Generate pipeline jobs api url using BaseURL, pipelineID and AKSID
 	if pipelineID == 0 {
 		return nil, nil
 	}
-	url := BaseURL + "api/v4/projects/" + GKEID + "/pipelines/" + strconv.Itoa(pipelineID) + "/jobs?per_page=50"
+	url := BaseURL + "api/v4/projects/" + AKSID + "/pipelines/" + strconv.Itoa(pipelineID) + "/jobs?per_page=50"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -163,10 +163,10 @@ func gkePipelineJobs(pipelineID int, token string) (Jobs, error) {
 	return obj, nil
 }
 
-// QueryGkeData fetch the pipeline data as well as jobs data form gke table of database
-func QueryGkeData(datas *dashboard) error {
+// QueryAksData fetch the pipeline data as well as jobs data form aks table of database
+func QueryAksData(datas *dashboard) error {
 	// Select all data from packetpipeline table of DB
-	pipelinerows, err := database.Db.Query(`SELECT id,sha,ref,status,web_url,kibana_url FROM gkepipeline ORDER BY build_pipelineid DESC`)
+	pipelinerows, err := database.Db.Query(`SELECT id,sha,ref,status,web_url,kibana_url FROM akspipeline ORDER BY build_pipelineid DESC`)
 	if err != nil {
 		return err
 	}
@@ -186,8 +186,8 @@ func QueryGkeData(datas *dashboard) error {
 		if err != nil {
 			return err
 		}
-		// Query gkejobs data of respective pipeline using pipelineID from gkejobs table
-		jobsquery := `SELECT * FROM gkejobs WHERE pipelineid = $1 ORDER BY id`
+		// Query aksjobs data of respective pipeline using pipelineID from aksjobs table
+		jobsquery := `SELECT * FROM aksjobs WHERE pipelineid = $1 ORDER BY id`
 		jobsrows, err := database.Db.Query(jobsquery, pipelinedata.ID)
 		if err != nil {
 			return err

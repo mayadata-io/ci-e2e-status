@@ -15,14 +15,14 @@ func UpdateDatabase() {
 		glog.Fatalf("TOKEN environment variable required")
 	}
 	// loop will iterate at every 6000 seconds
-	tick := time.Tick(20000 * time.Millisecond)
+	tick := time.Tick(1800000 * time.Millisecond)
 	for range tick {
 		BuildData(token)
 		// Trigger GkeData function for update GKE related data to database
 		go GkeData(token)
 		// 	// Trigger GkeData function for update EKS related data to database
-		// 	go EksData(token)
+		go EksData(token)
 		// 	// Trigger GkeData function for update AKS related data to database
-		// 	go AksData(token)
+		go AksData(token)
 	}
 }

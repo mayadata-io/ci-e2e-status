@@ -2,16 +2,13 @@ package handler
 
 // PlatformID assignment from gitlab repository
 const (
-	AKSID    = "2"
-	AWSID    = "1"
-	EKSID    = "3"
-	GCPID    = "4"
-	GKEID    = "5"
-	PACKETID = "6"
-	MAYAID   = "8"
-	JIVAID   = "7"
-	ISTGTID  = "18"
-	ZFSID    = "17"
+	AKSID   = "2"
+	EKSID   = "3"
+	GKEID   = "5"
+	MAYAID  = "8"
+	JIVAID  = "7"
+	ISTGTID = "18"
+	ZFSID   = "17"
 )
 
 // BranchName assignment from gitlab repository

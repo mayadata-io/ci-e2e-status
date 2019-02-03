@@ -68,7 +68,7 @@ func BuildData(token string) {
 			INSERT INTO buildpipeline (project, id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid, aks_trigger_pid)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 			ON CONFLICT (id) DO UPDATE
-			SET status = $4, gke_trigger_pid = $6, eks_trigger_pid = $7, aks_trigger_pid = $8
+			SET status = $5, gke_trigger_pid = $7, eks_trigger_pid = $8, aks_trigger_pid = $9
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
@@ -150,7 +150,7 @@ func BuildData(token string) {
 			INSERT INTO buildpipeline (project, id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid, aks_trigger_pid)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 			ON CONFLICT (id) DO UPDATE
-			SET status = $4, gke_trigger_pid = $6, eks_trigger_pid = $7, aks_trigger_pid = $8
+			SET status = $5, gke_trigger_pid = $7, eks_trigger_pid = $8, aks_trigger_pid = $9
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
@@ -222,7 +222,7 @@ func BuildData(token string) {
 		if err != nil {
 			glog.Error(err)
 		}
-		// Get EKS, Triggred pipeline ID for zfs build
+		// Get AKS, Triggred pipeline ID for zfs build
 		aksTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-azure")
 		if err != nil {
 			glog.Error(err)
@@ -232,7 +232,7 @@ func BuildData(token string) {
 			INSERT INTO buildpipeline (project, id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid, aks_trigger_pid)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 			ON CONFLICT (id) DO UPDATE
-			SET status = $4, gke_trigger_pid = $6, eks_trigger_pid = $7, aks_trigger_pid = $8
+			SET status = $5, gke_trigger_pid = $7, eks_trigger_pid = $8, aks_trigger_pid = $9
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
@@ -314,7 +314,7 @@ func BuildData(token string) {
 			INSERT INTO buildpipeline (project, id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid, aks_trigger_pid)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 			ON CONFLICT (id) DO UPDATE
-			SET status = $4, gke_trigger_pid = $6, eks_trigger_pid = $7, aks_trigger_pid = $8
+			SET status = $5, gke_trigger_pid = $7, eks_trigger_pid = $8, aks_trigger_pid = $9
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
@@ -445,7 +445,9 @@ func getTriggerPipelineid(jobURL, platform string) (string, error) {
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
 	data := string(body)
-
+	if data == "" {
+		return "0", nil
+	}
 	grep := exec.Command("grep", "-oP", "(?<="+GROUPNAME+"/"+platform+"/pipelines/)[^ ]*")
 	ps := exec.Command("echo", data)
 
