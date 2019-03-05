@@ -2,13 +2,11 @@ package handler
 
 // PlatformID assignment from gitlab repository
 const (
-	AKSID   = "2"
-	EKSID   = "3"
-	GKEID   = "5"
-	MAYAID  = "8"
-	JIVAID  = "7"
-	ISTGTID = "18"
-	ZFSID   = "17"
+	PACKETID = "27"
+	MAYAID   = "7"
+	JIVAID   = "6"
+	ISTGTID  = "5"
+	ZFSID    = "8"
 )
 
 // BranchName assignment from gitlab repository
@@ -130,16 +128,16 @@ type BuildJobssummary struct {
 
 // BuildpipelineSummary contains the details of a builds pipelines
 type BuildpipelineSummary struct {
-	Project       string             `json:"project"`
-	ID            int                `json:"id"`
-	Sha           string             `json:"sha"`
-	Ref           string             `json:"ref"`
-	Status        string             `json:"status"`
-	WebURL        string             `json:"web_url"`
-	GKETriggerPID string             `json:"gke_trigger_pid"`
-	EKSTriggerPID string             `json:"eks_trigger_pid"`
-	AKSTriggerPID string             `json:"aks_trigger_pid"`
-	Jobs          []BuildJobssummary `json:"jobs"`
+	Project      string             `json:"project"`
+	ID           int                `json:"id"`
+	Sha          string             `json:"sha"`
+	Ref          string             `json:"ref"`
+	Status       string             `json:"status"`
+	WebURL       string             `json:"web_url"`
+	PacketV11PID string             `json:"packet_v11_pid"`
+	PacketV12PID string             `json:"packet_v12_pid"`
+	PacketV13PID string             `json:"packet_v13_pid"`
+	Jobs         []BuildJobssummary `json:"jobs"`
 }
 
 // Builddashboard contains the details related to builds

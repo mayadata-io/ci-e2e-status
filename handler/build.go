@@ -49,26 +49,26 @@ func BuildData(token string) {
 		// Getting webURL link for getting triggredID
 		baselineJobsWebURL := getBaselineJobWebURL(jivaJobsData)
 		// Get GKE, Triggred pipeline ID for jiva build
-		gkeTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-gke")
+		packetV11PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-11")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get EKS, Triggred pipeline ID for jiva build
-		eksTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-eks")
+		packetV12PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-12")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get AKS, Triggred pipeline ID for jiva build
-		aksTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-azure")
+		packetV13PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-13")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Add jiva pipelines data to Database
 		sqlStatement := `
-			INSERT INTO buildpipeline (project, id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid, aks_trigger_pid)
+			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 			ON CONFLICT (id) DO UPDATE
-			SET status = $5, gke_trigger_pid = $7, eks_trigger_pid = $8, aks_trigger_pid = $9
+			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
@@ -78,9 +78,9 @@ func BuildData(token string) {
 			jivaPipelineData[i].Ref,
 			jivaPipelineData[i].Status,
 			jivaPipelineData[i].WebURL,
-			gkeTriggerID,
-			eksTriggerID,
-			aksTriggerID,
+			packetV11PID,
+			packetV12PID,
+			packetV13PID,
 		).Scan(&id)
 		if err != nil {
 			glog.Error(err)
@@ -90,7 +90,7 @@ func BuildData(token string) {
 		// Add jiva jobs data to Database
 		for j := range jivaJobsData {
 			sqlStatement := `
-				INSERT INTO buildjobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name)
+				INSERT INTO build_jobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name)
 				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 				ON CONFLICT (id) DO UPDATE
 				SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9
@@ -131,26 +131,26 @@ func BuildData(token string) {
 		// Getting webURL link for getting triggredID
 		baselineJobsWebURL := getBaselineJobWebURL(mayaJobsData)
 		// Get GKE, Triggred pipeline ID for maya build
-		gkeTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-gke")
+		packetV11PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-11")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get EKS, Triggred pipeline ID for maya build
-		eksTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-eks")
+		packetV12PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-12")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get AKS, Triggred pipeline ID for maya build
-		aksTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-azure")
+		packetV13PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-13")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Add maya pipelines data to Database
 		sqlStatement := `
-			INSERT INTO buildpipeline (project, id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid, aks_trigger_pid)
+			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 			ON CONFLICT (id) DO UPDATE
-			SET status = $5, gke_trigger_pid = $7, eks_trigger_pid = $8, aks_trigger_pid = $9
+			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
@@ -160,9 +160,9 @@ func BuildData(token string) {
 			mayaPipelineData[i].Ref,
 			mayaPipelineData[i].Status,
 			mayaPipelineData[i].WebURL,
-			gkeTriggerID,
-			eksTriggerID,
-			aksTriggerID,
+			packetV11PID,
+			packetV12PID,
+			packetV13PID,
 		).Scan(&id)
 		if err != nil {
 			glog.Error(err)
@@ -172,7 +172,7 @@ func BuildData(token string) {
 		// Add maya jobs data to Database
 		for j := range mayaJobsData {
 			sqlStatement := `
-				INSERT INTO buildjobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name)
+				INSERT INTO build_jobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name)
 				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 				ON CONFLICT (id) DO UPDATE
 				SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9
@@ -213,26 +213,26 @@ func BuildData(token string) {
 		// Getting webURL link for getting triggredID
 		baselineJobsWebURL := getBaselineJobWebURL(zfsJobsData)
 		// Get GKE, Triggred pipeline ID for zfs build
-		gkeTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-gke")
+		packetV11PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-11")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get EKS, Triggred pipeline ID for zfs build
-		eksTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-eks")
+		packetV12PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-12")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get AKS, Triggred pipeline ID for zfs build
-		aksTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-azure")
+		packetV13PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-13")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Add zfs pipelines data to Database
 		sqlStatement := `
-			INSERT INTO buildpipeline (project, id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid, aks_trigger_pid)
+			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 			ON CONFLICT (id) DO UPDATE
-			SET status = $5, gke_trigger_pid = $7, eks_trigger_pid = $8, aks_trigger_pid = $9
+			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
@@ -242,9 +242,9 @@ func BuildData(token string) {
 			zfsPipelineData[i].Ref,
 			zfsPipelineData[i].Status,
 			zfsPipelineData[i].WebURL,
-			gkeTriggerID,
-			eksTriggerID,
-			aksTriggerID,
+			packetV11PID,
+			packetV12PID,
+			packetV13PID,
 		).Scan(&id)
 		if err != nil {
 			glog.Error(err)
@@ -254,7 +254,7 @@ func BuildData(token string) {
 		// Add zfs jobs data to Database
 		for j := range zfsJobsData {
 			sqlStatement := `
-				INSERT INTO buildjobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name)
+				INSERT INTO build_jobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name)
 				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 				ON CONFLICT (id) DO UPDATE
 				SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9
@@ -295,26 +295,26 @@ func BuildData(token string) {
 		// Getting webURL link for getting triggredID
 		baselineJobsWebURL := getBaselineJobWebURL(istgtJobsData)
 		// Get GKE, Triggred pipeline ID for istgt build
-		gkeTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-gke")
+		packetV11PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-11")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get EKS, Triggred pipeline ID for istgt build
-		eksTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-eks")
+		packetV12PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-12")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get AKS, Triggred pipeline ID for istgt build
-		aksTriggerID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-azure")
+		packetV13PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-13")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Add istgt pipelines data to Database
 		sqlStatement := `
-			INSERT INTO buildpipeline (project, id, sha, ref, status, web_url, gke_trigger_pid, eks_trigger_pid, aks_trigger_pid)
+			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 			ON CONFLICT (id) DO UPDATE
-			SET status = $5, gke_trigger_pid = $7, eks_trigger_pid = $8, aks_trigger_pid = $9
+			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
@@ -324,9 +324,9 @@ func BuildData(token string) {
 			istgtPipelineData[i].Ref,
 			istgtPipelineData[i].Status,
 			istgtPipelineData[i].WebURL,
-			gkeTriggerID,
-			eksTriggerID,
-			aksTriggerID,
+			packetV11PID,
+			packetV12PID,
+			packetV13PID,
 		).Scan(&id)
 		if err != nil {
 			glog.Error(err)
@@ -336,7 +336,7 @@ func BuildData(token string) {
 		// Add istgt jobs data to Database
 		for j := range istgtJobsData {
 			sqlStatement := `
-				INSERT INTO buildjobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name)
+				INSERT INTO build_jobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name)
 				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 				ON CONFLICT (id) DO UPDATE
 				SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9
@@ -365,13 +365,13 @@ func BuildData(token string) {
 }
 
 func modifyBuildData() {
-	database.Db.QueryRow(`DELETE FROM buildpipeline WHERE id < (SELECT id FROM buildpipeline ORDER BY id DESC LIMIT 1 OFFSET 19)`)
+	database.Db.QueryRow(`DELETE FROM build_pipeline WHERE id < (SELECT id FROM build_pipeline ORDER BY id DESC LIMIT 1 OFFSET 19)`)
 	return
 }
 
 // queryBuildData fetches the builddashboard data from the db
 func queryBuildData(datas *Builddashboard) error {
-	pipelinerows, err := database.Db.Query(`SELECT * FROM buildpipeline ORDER BY id DESC`)
+	pipelinerows, err := database.Db.Query(`SELECT * FROM build_pipeline ORDER BY id DESC`)
 	if err != nil {
 		return err
 	}
@@ -385,15 +385,15 @@ func queryBuildData(datas *Builddashboard) error {
 			&pipelinedata.Ref,
 			&pipelinedata.Status,
 			&pipelinedata.WebURL,
-			&pipelinedata.GKETriggerPID,
-			&pipelinedata.EKSTriggerPID,
-			&pipelinedata.AKSTriggerPID,
+			&pipelinedata.PacketV11PID,
+			&pipelinedata.PacketV12PID,
+			&pipelinedata.PacketV13PID,
 		)
 		if err != nil {
 			return err
 		}
 
-		jobsquery := `SELECT * FROM buildjobs WHERE pipelineid = $1 ORDER BY id`
+		jobsquery := `SELECT * FROM build_jobs WHERE pipelineid = $1 ORDER BY id`
 		jobsrows, err := database.Db.Query(jobsquery, pipelinedata.ID)
 		if err != nil {
 			return err
@@ -430,7 +430,7 @@ func queryBuildData(datas *Builddashboard) error {
 	return nil
 }
 
-func getTriggerPipelineid(jobURL, platform string) (string, error) {
+func getTriggerPipelineid(jobURL, k8sVersion string) (string, error) {
 	url := jobURL + "/raw"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -448,7 +448,7 @@ func getTriggerPipelineid(jobURL, platform string) (string, error) {
 	if data == "" {
 		return "0", nil
 	}
-	grep := exec.Command("grep", "-oP", "(?<="+GROUPNAME+"/"+platform+"/pipelines/)[^ ]*")
+	grep := exec.Command("grep", "-oP", "(?<="+k8sVersion+")[^ ]*")
 	ps := exec.Command("echo", data)
 
 	// Get ps's stdout and attach it to grep's stdin.
@@ -459,11 +459,15 @@ func getTriggerPipelineid(jobURL, platform string) (string, error) {
 
 	// Run and get the output of grep.
 	value, _ := grep.Output()
-	result := strings.Split(string(value), "\"")
-	if result[0] == "" {
+	if string(value) == "" {
 		return "0", nil
 	}
-	return result[0], nil
+	result := strings.Split(string(value), "\"")
+	result = strings.Split(string(result[8]), "/")
+	if result[6] == "" {
+		return "0", nil
+	}
+	return result[6], nil
 }
 
 // // jivaPipelineJobs will get pipeline jobs details from gitlab api

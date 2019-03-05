@@ -8,25 +8,31 @@ import (
 )
 
 // UpdateDatabase will update the latest pipelines detail and status
+// TODO
 func UpdateDatabase() {
 	// Read token environment variable
 	token, ok := os.LookupEnv(token)
 	if !ok {
 		glog.Fatalf("TOKEN environment variable required")
 	}
+	// Update the database, This wil run only first time
 	BuildData(token)
-	go GkeData(token)
-	go EksData(token)
-	go AksData(token)
-	// loop will iterate at every 6000 seconds
-	tick := time.Tick(1800000 * time.Millisecond)
+	k8sVersion := []string{"v11", "v12", "v13"}
+	for _, k8sVersion := range k8sVersion {
+		columnName := "packet_" + k8sVersion + "_pid"
+		pipelineTable := "packet_pipeline_" + k8sVersion
+		jobTable := "packet_jobs_" + k8sVersion
+		PacketData(token, columnName, pipelineTable, jobTable)
+	}
+	// loop will iterate at every 2nd minute and update the database
+	tick := time.Tick(2 * time.Minute)
 	for range tick {
 		BuildData(token)
-		// Trigger GkeData function for update GKE related data to database
-		go GkeData(token)
-		// 	// Trigger GkeData function for update EKS related data to database
-		go EksData(token)
-		// 	// Trigger GkeData function for update AKS related data to database
-		go AksData(token)
+		for _, k8sVersion := range k8sVersion {
+			columnName := "packet_" + k8sVersion + "_pid"
+			pipelineTable := "packet_pipeline_" + k8sVersion
+			jobTable := "packet_jobs_" + k8sVersion
+			PacketData(token, columnName, pipelineTable, jobTable)
+		}
 	}
 }
