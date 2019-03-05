@@ -1,0 +1,57 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: openebs-ci-backend
+  name: openebs-ci-backend
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openebs-ci-backend
+  template:
+    metadata:
+      labels:
+        app: openebs-ci-backend
+    spec:
+      containers:
+      - env:
+        - name: TOKEN
+          value: ""
+        - name: DBHOST
+          value: "pgset-primary"
+        - name: DBPORT
+          value: "5432"
+        - name: DBUSER
+          value: "postgres"
+        - name: DBPASS
+          value: "password"
+        - name: DBNAME
+          value: "postgres"
+        name: openebs-ci-backend
+        image: openebs/ci-database:latest
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 3000
+            protocol: TCP
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: openebs-ci-backend
+  name: openebs-ci-backend
+  namespace: default
+spec:
+  ports:
+  - name: openebs-ci-backend
+    port: 3000
+    protocol: TCP
+    targetPort: 3000
+    nodePort: 30002
+  selector:
+    app: openebs-ci-backend
+  type: NodePort     
