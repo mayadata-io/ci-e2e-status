@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"net/http"
 
 	"github.com/golang/glog"
@@ -10,6 +11,8 @@ import (
 )
 
 func main() {
+	flag.Parse()
+	flag.Lookup("logtostderr").Value.Set("true")
 	// Initailze Db connection
 	database.InitDb()
 	// Return value to all / api path

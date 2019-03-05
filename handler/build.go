@@ -358,7 +358,7 @@ func BuildData(token string) {
 			if err != nil {
 				glog.Error(err)
 			}
-			glog.Infoln("New record ID for istgt pipeline Jobs: ", id)
+			glog.Infoln("New record ID for istgt pipeline Jobs:", id)
 		}
 	}
 	modifyBuildData()
