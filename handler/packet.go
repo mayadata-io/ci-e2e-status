@@ -132,7 +132,7 @@ func PacketData(token, triggredIDColumnName, pipelineTableName, jobTableName str
 				if err != nil {
 					glog.Error(err)
 				}
-				glog.Infof("New record ID for PACKET Jobs: %s", id)
+				glog.Infoln("New record ID for PACKET Jobs:", id)
 			}
 		}
 	}
