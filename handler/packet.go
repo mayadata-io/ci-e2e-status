@@ -82,6 +82,7 @@ func PacketData(token, triggredIDColumnName, pipelineTableName, jobTableName str
 			&pipelinedata.BuildPID,
 			&pipelinedata.ID,
 		)
+		defer packetPipelineID.Close()
 		packetPipelineData, err := packetPipeline(token, pipelinedata.ID)
 		if err != nil {
 			glog.Error(err)
@@ -92,7 +93,7 @@ func PacketData(token, triggredIDColumnName, pipelineTableName, jobTableName str
 			glog.Error(err)
 			return
 		}
-		if pipelinedata.ID != 0 {
+		if pipelinedata.ID != 0 && len(pipelineJobsdata) != 0 {
 			jobStartedAt := pipelineJobsdata[0].StartedAt
 			JobFinishedAt := pipelineJobsdata[len(pipelineJobsdata)-1].FinishedAt
 			logURL = Kibanaloglink(packetPipelineData.Sha, packetPipelineData.ID, packetPipelineData.Status, jobStartedAt, JobFinishedAt)

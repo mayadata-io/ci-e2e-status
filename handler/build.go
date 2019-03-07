@@ -361,12 +361,19 @@ func BuildData(token string) {
 			glog.Infoln("New record ID for istgt pipeline Jobs:", id)
 		}
 	}
-	modifyBuildData()
+	err = modifyBuildData()
+	if err != nil {
+		glog.Error(err)
+	}
 }
 
-func modifyBuildData() {
-	database.Db.QueryRow(`DELETE FROM build_pipeline WHERE id < (SELECT id FROM build_pipeline ORDER BY id DESC LIMIT 1 OFFSET 19)`)
-	return
+func modifyBuildData() error {
+	query, err := database.Db.Query(`DELETE FROM build_pipeline WHERE id < (SELECT id FROM build_pipeline ORDER BY id DESC LIMIT 1 OFFSET 19)`)
+	if err != nil {
+		return err
+	}
+	defer query.Close()
+	return nil
 }
 
 // queryBuildData fetches the builddashboard data from the db
