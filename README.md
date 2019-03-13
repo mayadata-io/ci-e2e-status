@@ -1,4 +1,6 @@
-# ci-e2e-dashboard-go-backend
+[![Go Report Card](https://goreportcard.com/badge/github.com/openebs/ci-e2e-dashboard-go-backend)](https://goreportcard.com/report/github.com/openebs/ci-e2e-dashboard-go-backend)
+[![Build status](https://img.shields.io/gitlab/pipeline/openebs/ci-e2e-dashboard-go-backend.svg?color=green&gitlab_url=https%3A%2F%2Fgitlab.openebs.ci&style=plastic)](https://gitlab.openebs.ci/openebs/ci-e2e-dashboard-go-backend/pipelines)
+[![BCH compliance](https://bettercodehub.com/edge/badge/openebs/ci-e2e-dashboard-go-backend?branch=master)](https://bettercodehub.com/)
 
 OpenEBS CI Dashboard backend using Go and PostgreSQL.
 
