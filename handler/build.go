@@ -561,11 +561,17 @@ func jobURLGenerator(id int, project string) string {
 	return generatedURL
 }
 
+// Generate joburl of baseline stage
 func getBaselineJobWebURL(data BuildJobs) string {
+	var maxJobID = 0
+	var jobURL string
 	for _, value := range data {
 		if value.Stage == "baseline" {
-			return value.WebURL
+			if value.ID > maxJobID {
+				maxJobID = value.ID
+				jobURL = value.WebURL
+			}
 		}
 	}
-	return ""
+	return jobURL
 }
