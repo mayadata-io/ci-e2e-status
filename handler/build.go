@@ -65,8 +65,8 @@ func BuildData(token string) {
 		}
 		// Add jiva pipelines data to Database
 		sqlStatement := `
-			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid, openshift_pid)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 0)
 			ON CONFLICT (id) DO UPDATE
 			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9
 			RETURNING id`
@@ -147,8 +147,8 @@ func BuildData(token string) {
 		}
 		// Add maya pipelines data to Database
 		sqlStatement := `
-			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid, openshift_pid)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 0)
 			ON CONFLICT (id) DO UPDATE
 			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9
 			RETURNING id`
@@ -229,8 +229,8 @@ func BuildData(token string) {
 		}
 		// Add zfs pipelines data to Database
 		sqlStatement := `
-			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid, openshift_pid)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 0)
 			ON CONFLICT (id) DO UPDATE
 			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9
 			RETURNING id`
@@ -311,8 +311,8 @@ func BuildData(token string) {
 		}
 		// Add istgt pipelines data to Database
 		sqlStatement := `
-			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid, openshift_pid)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 0)
 			ON CONFLICT (id) DO UPDATE
 			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9
 			RETURNING id`
@@ -361,6 +361,71 @@ func BuildData(token string) {
 			glog.Infoln("New record ID for istgt pipeline Jobs:", id)
 		}
 	}
+
+	project = "openshift"
+	openshiftPipelineData, err := pipelineData("openshift", token)
+	if err != nil {
+		glog.Error(err)
+		return
+	}
+	for i := range openshiftPipelineData {
+		openshiftJobsData, err := pipelineJobsData(openshiftPipelineData[i].ID, token, "openshift")
+		if err != nil {
+			glog.Error(err)
+			return
+		}
+		sqlStatement := `
+			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid, openshift_pid)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+			ON CONFLICT (id) DO UPDATE
+			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9, openshift_pid = $10
+			RETURNING id`
+		id := 0
+		err = database.Db.QueryRow(sqlStatement,
+			project,
+			openshiftPipelineData[i].ID,
+			openshiftPipelineData[i].Sha,
+			openshiftPipelineData[i].Ref,
+			openshiftPipelineData[i].Status,
+			openshiftPipelineData[i].WebURL,
+			"0",
+			"0",
+			"0",
+			openshiftPipelineData[i].ID,
+		).Scan(&id)
+		if err != nil {
+			glog.Error(err)
+		}
+		glog.Infoln("New record ID for openshift Pipeline:", id)
+
+		// Add istgt jobs data to Database
+		for j := range openshiftJobsData {
+			sqlStatement := `
+				INSERT INTO build_jobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+				ON CONFLICT (id) DO UPDATE
+				SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9
+				RETURNING id`
+			id := 0
+			err = database.Db.QueryRow(sqlStatement,
+				openshiftPipelineData[i].ID,
+				openshiftJobsData[j].ID,
+				openshiftJobsData[j].Status,
+				openshiftJobsData[j].Stage,
+				openshiftJobsData[j].Name,
+				openshiftJobsData[j].Ref,
+				openshiftJobsData[j].CreatedAt,
+				openshiftJobsData[j].StartedAt,
+				openshiftJobsData[j].FinishedAt,
+				openshiftJobsData[j].Commit.Message,
+				openshiftJobsData[j].Commit.AuthorName,
+			).Scan(&id)
+			if err != nil {
+				glog.Error(err)
+			}
+			glog.Infoln("New record ID for openshift pipeline Jobs:", id)
+		}
+	}
 	err = modifyBuildData()
 	if err != nil {
 		glog.Error(err)
@@ -395,6 +460,7 @@ func queryBuildData(datas *Builddashboard) error {
 			&pipelinedata.PacketV11PID,
 			&pipelinedata.PacketV12PID,
 			&pipelinedata.PacketV13PID,
+			&pipelinedata.OpenshiftPID,
 		)
 		if err != nil {
 			return err
@@ -540,6 +606,9 @@ func pipelineURLGenerator(project string) string {
 	} else if project == "zfs" {
 		projectID = ZFSID
 		Branch = ZFSBRANCH
+	} else if project == "openshift" {
+		projectID = OPENSHIFTID
+		Branch = "master"
 	}
 	generatedURL := BaseURL + "api/v4/projects/" + projectID + "/pipelines?ref=" + Branch
 	return generatedURL
@@ -556,8 +625,10 @@ func jobURLGenerator(id int, project string) string {
 		projectID = ISTGTID
 	} else if project == "zfs" {
 		projectID = ZFSID
+	} else if project == "openshift" {
+		projectID = OPENSHIFTID
 	}
-	generatedURL := BaseURL + "api/v4/projects/" + projectID + "/pipelines/" + strconv.Itoa(id) + "/jobs"
+	generatedURL := BaseURL + "api/v4/projects/" + projectID + "/pipelines/" + strconv.Itoa(id) + "/jobs?per_page=50"
 	return generatedURL
 }
 

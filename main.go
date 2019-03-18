@@ -19,6 +19,7 @@ func main() {
 	http.HandleFunc("/packet/v11", handler.PacketHandlerV11)
 	http.HandleFunc("/packet/v12", handler.PacketHandlerV12)
 	http.HandleFunc("/packet/v13", handler.PacketHandlerV13)
+	http.HandleFunc("/openshift", handler.OpenshiftHandler)
 	http.HandleFunc("/build", handler.Buildhandler)
 	glog.Infof("Listening on http://0.0.0.0:3000")
 

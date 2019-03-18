@@ -24,8 +24,9 @@ func UpdateDatabase() {
 		jobTable := "packet_jobs_" + k8sVersion
 		PacketData(token, columnName, pipelineTable, jobTable)
 	}
+	OpenshiftData(token, "openshift_pid", "openshift_pipeline", "openshift_jobs")
 	// loop will iterate at every 2nd minute and update the database
-	tick := time.Tick(2 * time.Minute)
+	tick := time.Tick(10 * time.Minute)
 	for range tick {
 		BuildData(token)
 		for _, k8sVersion := range k8sVersion {
@@ -34,5 +35,6 @@ func UpdateDatabase() {
 			jobTable := "packet_jobs_" + k8sVersion
 			PacketData(token, columnName, pipelineTable, jobTable)
 		}
+		OpenshiftData(token, "openshift_pid", "openshift_pipeline", "openshift_jobs")
 	}
 }
