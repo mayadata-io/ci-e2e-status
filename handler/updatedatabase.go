@@ -16,12 +16,17 @@ func UpdateDatabase() {
 		glog.Fatalf("TOKEN environment variable required")
 	}
 	// Update the database, This wil run only first time
-	BuildData(token)
+	projects := []string{"maya", "jiva", "istgt", "zfs"}
+	for _, project := range projects {
+		BuildData(token, project)
+	}
 	OpenshiftData(token, "openshift_pid", "openshift_pipeline", "openshift_jobs")
 	// loop will iterate at every 2nd minute and update the database
 	tick := time.Tick(10 * time.Minute)
 	for range tick {
-		BuildData(token)
+		for _, project := range projects {
+			BuildData(token, project)
+		}
 		OpenshiftData(token, "openshift_pid", "openshift_pipeline", "openshift_jobs")
 	}
 }

@@ -33,27 +33,26 @@ func Buildhandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // BuildData from gitlab api and store to database
-func BuildData(token string) {
-	project := "jiva"
-	jivaPipelineData, err := pipelineData(project, token)
+func BuildData(token, project string) {
+	pipelineData, err := getPipelineData(project, token)
 	if err != nil {
 		glog.Error(err)
 		return
 	}
-	for i := range jivaPipelineData {
-		jivaJobsData, err := pipelineJobsData(jivaPipelineData[i].ID, token, project)
+	for i := range pipelineData {
+		pipelineJobsData, err := getPipelineJobsData(pipelineData[i].ID, token, project)
 		if err != nil {
 			glog.Error(err)
 			return
 		}
 		// Getting webURL link for getting triggredID
-		baselineJobsWebURL := getBaselineJobWebURL(jivaJobsData)
-		// Get Openshift, Triggred pipeline ID for jiva build
+		baselineJobsWebURL := getBaselineJobWebURL(pipelineJobsData)
+		// Get Openshift, Triggred pipeline ID for sepecified project
 		openshiftPID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-openshift")
 		if err != nil {
 			glog.Error(err)
 		}
-		// Add jiva pipelines data to Database
+		// Add pipelines data to Database
 		sqlStatement := `
 			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, openshift_pid)
 			VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -63,20 +62,20 @@ func BuildData(token string) {
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
 			project,
-			jivaPipelineData[i].ID,
-			jivaPipelineData[i].Sha,
-			jivaPipelineData[i].Ref,
-			jivaPipelineData[i].Status,
-			jivaPipelineData[i].WebURL,
+			pipelineData[i].ID,
+			pipelineData[i].Sha,
+			pipelineData[i].Ref,
+			pipelineData[i].Status,
+			pipelineData[i].WebURL,
 			openshiftPID,
 		).Scan(&id)
 		if err != nil {
 			glog.Error(err)
 		}
-		glog.Infoln("New record ID for jiva Pipeline:", id)
+		glog.Infof("New record ID for %s Pipeline: %d", project, id)
 
-		// Add jiva jobs data to Database
-		for j := range jivaJobsData {
+		// Add pipeline jobs data to Database
+		for j := range pipelineJobsData {
 			sqlStatement := `
 				INSERT INTO build_jobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name)
 				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
@@ -85,232 +84,22 @@ func BuildData(token string) {
 				RETURNING id`
 			id := 0
 			err = database.Db.QueryRow(sqlStatement,
-				jivaPipelineData[i].ID,
-				jivaJobsData[j].ID,
-				jivaJobsData[j].Status,
-				jivaJobsData[j].Stage,
-				jivaJobsData[j].Name,
-				jivaJobsData[j].Ref,
-				jivaJobsData[j].CreatedAt,
-				jivaJobsData[j].StartedAt,
-				jivaJobsData[j].FinishedAt,
-				jivaJobsData[j].Commit.Message,
-				jivaJobsData[j].Commit.AuthorName,
+				pipelineData[i].ID,
+				pipelineJobsData[j].ID,
+				pipelineJobsData[j].Status,
+				pipelineJobsData[j].Stage,
+				pipelineJobsData[j].Name,
+				pipelineJobsData[j].Ref,
+				pipelineJobsData[j].CreatedAt,
+				pipelineJobsData[j].StartedAt,
+				pipelineJobsData[j].FinishedAt,
+				pipelineJobsData[j].Commit.Message,
+				pipelineJobsData[j].Commit.AuthorName,
 			).Scan(&id)
 			if err != nil {
 				glog.Error(err)
 			}
-			glog.Infoln("New record ID for jiva pipeline Jobs: ", id)
-		}
-	}
-
-	project = "maya"
-	mayaPipelineData, err := pipelineData(project, token)
-	if err != nil {
-		glog.Error(err)
-		return
-	}
-	for i := range mayaPipelineData {
-		mayaJobsData, err := pipelineJobsData(mayaPipelineData[i].ID, token, project)
-		if err != nil {
-			glog.Error(err)
-			return
-		}
-		// Getting webURL link for getting triggredID
-		baselineJobsWebURL := getBaselineJobWebURL(mayaJobsData)
-		// Get Openshift, Triggred pipeline ID for maya build
-		openshiftPID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-openshift")
-		if err != nil {
-			glog.Error(err)
-		}
-		// Add maya pipelines data to Database
-		sqlStatement := `
-			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, openshift_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7)
-			ON CONFLICT (id) DO UPDATE
-			SET status = $5, openshift_pid = $7
-			RETURNING id`
-		id := 0
-		err = database.Db.QueryRow(sqlStatement,
-			project,
-			mayaPipelineData[i].ID,
-			mayaPipelineData[i].Sha,
-			mayaPipelineData[i].Ref,
-			mayaPipelineData[i].Status,
-			mayaPipelineData[i].WebURL,
-			openshiftPID,
-		).Scan(&id)
-		if err != nil {
-			glog.Error(err)
-		}
-		glog.Infoln("New record ID for maya Pipeline:", id)
-
-		// Add maya jobs data to Database
-		for j := range mayaJobsData {
-			sqlStatement := `
-				INSERT INTO build_jobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-				ON CONFLICT (id) DO UPDATE
-				SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9
-				RETURNING id`
-			id := 0
-			err = database.Db.QueryRow(sqlStatement,
-				mayaPipelineData[i].ID,
-				mayaJobsData[j].ID,
-				mayaJobsData[j].Status,
-				mayaJobsData[j].Stage,
-				mayaJobsData[j].Name,
-				mayaJobsData[j].Ref,
-				mayaJobsData[j].CreatedAt,
-				mayaJobsData[j].StartedAt,
-				mayaJobsData[j].FinishedAt,
-				mayaJobsData[j].Commit.Message,
-				mayaJobsData[j].Commit.AuthorName,
-			).Scan(&id)
-			if err != nil {
-				glog.Error(err)
-			}
-			glog.Infoln("New record ID for maya pipeline Jobs: ", id)
-		}
-	}
-
-	project = "zfs"
-	zfsPipelineData, err := pipelineData(project, token)
-	if err != nil {
-		glog.Error(err)
-		return
-	}
-	for i := range zfsPipelineData {
-		zfsJobsData, err := pipelineJobsData(zfsPipelineData[i].ID, token, project)
-		if err != nil {
-			glog.Error(err)
-			return
-		}
-		// Getting webURL link for getting triggredID
-		baselineJobsWebURL := getBaselineJobWebURL(zfsJobsData)
-		// Get Openshift, Triggred pipeline ID for ZFS build
-		openshiftPID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-openshift")
-		if err != nil {
-			glog.Error(err)
-		}
-		// Add zfs pipelines data to Database
-		sqlStatement := `
-			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, openshift_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7)
-			ON CONFLICT (id) DO UPDATE
-			SET status = $5, openshift_pid = $7
-			RETURNING id`
-		id := 0
-		err = database.Db.QueryRow(sqlStatement,
-			project,
-			zfsPipelineData[i].ID,
-			zfsPipelineData[i].Sha,
-			zfsPipelineData[i].Ref,
-			zfsPipelineData[i].Status,
-			zfsPipelineData[i].WebURL,
-			openshiftPID,
-		).Scan(&id)
-		if err != nil {
-			glog.Error(err)
-		}
-		glog.Infoln("New record ID for zfs Pipeline:", id)
-
-		// Add zfs jobs data to Database
-		for j := range zfsJobsData {
-			sqlStatement := `
-				INSERT INTO build_jobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-				ON CONFLICT (id) DO UPDATE
-				SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9
-				RETURNING id`
-			id := 0
-			err = database.Db.QueryRow(sqlStatement,
-				zfsPipelineData[i].ID,
-				zfsJobsData[j].ID,
-				zfsJobsData[j].Status,
-				zfsJobsData[j].Stage,
-				zfsJobsData[j].Name,
-				zfsJobsData[j].Ref,
-				zfsJobsData[j].CreatedAt,
-				zfsJobsData[j].StartedAt,
-				zfsJobsData[j].FinishedAt,
-				zfsJobsData[j].Commit.Message,
-				zfsJobsData[j].Commit.AuthorName,
-			).Scan(&id)
-			if err != nil {
-				glog.Error(err)
-			}
-			glog.Infoln("New record ID for zfs pipeline Jobs: ", id)
-		}
-	}
-
-	project = "istgt"
-	istgtPipelineData, err := pipelineData("istgt", token)
-	if err != nil {
-		glog.Error(err)
-		return
-	}
-	for i := range istgtPipelineData {
-		istgtJobsData, err := pipelineJobsData(istgtPipelineData[i].ID, token, "istgt")
-		if err != nil {
-			glog.Error(err)
-			return
-		}
-		// Getting webURL link for getting triggredID
-		baselineJobsWebURL := getBaselineJobWebURL(istgtJobsData)
-		// Get Openshift, Triggred pipeline ID for ISTGT build
-		openshiftPID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-openshift")
-		if err != nil {
-			glog.Error(err)
-		}
-		// Add istgt pipelines data to Database
-		sqlStatement := `
-			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, openshift_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7)
-			ON CONFLICT (id) DO UPDATE
-			SET status = $5, openshift_pid = $7
-			RETURNING id`
-		id := 0
-		err = database.Db.QueryRow(sqlStatement,
-			project,
-			istgtPipelineData[i].ID,
-			istgtPipelineData[i].Sha,
-			istgtPipelineData[i].Ref,
-			istgtPipelineData[i].Status,
-			istgtPipelineData[i].WebURL,
-			openshiftPID,
-		).Scan(&id)
-		if err != nil {
-			glog.Error(err)
-		}
-		glog.Infoln("New record ID for istgt Pipeline:", id)
-
-		// Add istgt jobs data to Database
-		for j := range istgtJobsData {
-			sqlStatement := `
-				INSERT INTO build_jobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-				ON CONFLICT (id) DO UPDATE
-				SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9
-				RETURNING id`
-			id := 0
-			err = database.Db.QueryRow(sqlStatement,
-				istgtPipelineData[i].ID,
-				istgtJobsData[j].ID,
-				istgtJobsData[j].Status,
-				istgtJobsData[j].Stage,
-				istgtJobsData[j].Name,
-				istgtJobsData[j].Ref,
-				istgtJobsData[j].CreatedAt,
-				istgtJobsData[j].StartedAt,
-				istgtJobsData[j].FinishedAt,
-				istgtJobsData[j].Commit.Message,
-				istgtJobsData[j].Commit.AuthorName,
-			).Scan(&id)
-			if err != nil {
-				glog.Error(err)
-			}
-			glog.Infoln("New record ID for istgt pipeline Jobs:", id)
+			glog.Infof("New record ID for %s pipeline Jobs: %d", project, id)
 		}
 	}
 	err = modifyBuildData()
@@ -425,7 +214,7 @@ func getTriggerPipelineid(jobURL, filter string) (string, error) {
 }
 
 // pipelineJobsData will get pipeline jobs details from gitlab api
-func pipelineJobsData(id int, token string, project string) (BuildJobs, error) {
+func getPipelineJobsData(id int, token string, project string) (BuildJobs, error) {
 	url := jobURLGenerator(id, project)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -449,7 +238,7 @@ func pipelineJobsData(id int, token string, project string) (BuildJobs, error) {
 }
 
 // pipelineData will fetch the data from gitlab API
-func pipelineData(project, token string) (Pipeline, error) {
+func getPipelineData(project, token string) (Pipeline, error) {
 	URL := pipelineURLGenerator(project)
 	req, err := http.NewRequest("GET", URL, nil)
 	if err != nil {
