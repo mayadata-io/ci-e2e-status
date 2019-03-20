@@ -11,12 +11,12 @@ import (
 	"github.com/openebs/ci-e2e-dashboard-go-backend/database"
 )
 
-// PacketHandlerV11 return packet pipeline data to /packet path
-func PacketHandlerV11(w http.ResponseWriter, r *http.Request) {
+// OpenshiftHandler return openshift pipeline data to /openshift path
+func OpenshiftHandler(w http.ResponseWriter, r *http.Request) {
 	// Allow cross origin request
 	(w).Header().Set("Access-Control-Allow-Origin", "*")
 	datas := dashboard{}
-	err := QueryPacketData(&datas, "packet_pipeline_v11", "packet_jobs_v11")
+	err := QueryOpenshiftData(&datas, "Openshift_pipeline", "Openshift_jobs")
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		glog.Error(err)
@@ -29,66 +29,28 @@ func PacketHandlerV11(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
-// PacketHandlerV12 return packet pipeline data to /packet path
-// TODO
-func PacketHandlerV12(w http.ResponseWriter, r *http.Request) {
-	// Allow cross origin request
-	(w).Header().Set("Access-Control-Allow-Origin", "*")
-	datas := dashboard{}
-	err := QueryPacketData(&datas, "packet_pipeline_v12", "packet_jobs_v12")
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		glog.Error(err)
-	}
-	out, err := json.Marshal(datas)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		glog.Error(err)
-	}
-	w.Write(out)
-}
-
-// PacketHandlerV13 return packet pipeline data to /packet path
-// TODO
-func PacketHandlerV13(w http.ResponseWriter, r *http.Request) {
-	// Allow cross origin request
-	(w).Header().Set("Access-Control-Allow-Origin", "*")
-	datas := dashboard{}
-	err := QueryPacketData(&datas, "packet_pipeline_v13", "packet_jobs_v13")
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		glog.Error(err)
-	}
-	out, err := json.Marshal(datas)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		glog.Error(err)
-	}
-	w.Write(out)
-}
-
-// PacketData from gitlab api for Packet and dump to database
-func PacketData(token, triggredIDColumnName, pipelineTableName, jobTableName string) {
+// OpenshiftData from gitlab api for Openshift and dump to database
+func OpenshiftData(token, triggredIDColumnName, pipelineTableName, jobTableName string) {
 	query := fmt.Sprintf("SELECT id,%s FROM build_pipeline ORDER BY id DESC FETCH FIRST 20 ROWS ONLY;", triggredIDColumnName)
-	packetPipelineID, err := database.Db.Query(query)
+	openshiftPipelineID, err := database.Db.Query(query)
 	if err != nil {
-		glog.Error("PACKET pipeline quering data Error:", err)
+		glog.Error("OPENSHIFT pipeline quering data Error:", err)
 		return
 	}
-	for packetPipelineID.Next() {
+	for openshiftPipelineID.Next() {
 		var logURL string
 		pipelinedata := TriggredID{}
-		err = packetPipelineID.Scan(
+		err = openshiftPipelineID.Scan(
 			&pipelinedata.BuildPID,
 			&pipelinedata.ID,
 		)
-		defer packetPipelineID.Close()
-		packetPipelineData, err := packetPipeline(token, pipelinedata.ID)
+		defer openshiftPipelineID.Close()
+		openshiftPipelineData, err := openshiftPipeline(token, pipelinedata.ID)
 		if err != nil {
 			glog.Error(err)
 			return
 		}
-		pipelineJobsdata, err := packetPipelineJobs(packetPipelineData.ID, token)
+		pipelineJobsdata, err := openshiftPipelineJobs(openshiftPipelineData.ID, token)
 		if err != nil {
 			glog.Error(err)
 			return
@@ -96,31 +58,31 @@ func PacketData(token, triggredIDColumnName, pipelineTableName, jobTableName str
 		if pipelinedata.ID != 0 && len(pipelineJobsdata) != 0 {
 			jobStartedAt := pipelineJobsdata[0].StartedAt
 			JobFinishedAt := pipelineJobsdata[len(pipelineJobsdata)-1].FinishedAt
-			logURL = Kibanaloglink(packetPipelineData.Sha, packetPipelineData.ID, packetPipelineData.Status, jobStartedAt, JobFinishedAt)
+			logURL = Kibanaloglink(openshiftPipelineData.Sha, openshiftPipelineData.ID, openshiftPipelineData.Status, jobStartedAt, JobFinishedAt)
 		}
 		sqlStatement := fmt.Sprintf("INSERT INTO %s (build_pipelineid, id, sha, ref, status, web_url, kibana_url) VALUES ($1, $2, $3, $4, $5, $6, $7)"+
 			"ON CONFLICT (build_pipelineid) DO UPDATE SET id = $2, sha = $3, ref = $4, status = $5, web_url = $6, kibana_url = $7 RETURNING id;", pipelineTableName)
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
 			pipelinedata.BuildPID,
-			packetPipelineData.ID,
-			packetPipelineData.Sha,
-			packetPipelineData.Ref,
-			packetPipelineData.Status,
-			packetPipelineData.WebURL,
+			openshiftPipelineData.ID,
+			openshiftPipelineData.Sha,
+			openshiftPipelineData.Ref,
+			openshiftPipelineData.Status,
+			openshiftPipelineData.WebURL,
 			logURL,
 		).Scan(&id)
 		if err != nil {
 			glog.Error(err)
 		}
-		glog.Infoln("New record ID for PACKET Pipeline:", id)
+		glog.Infoln("New record ID for OPENSHIFT Pipeline:", id)
 		if pipelinedata.ID != 0 {
 			for j := range pipelineJobsdata {
 				sqlStatement := fmt.Sprintf("INSERT INTO %s (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"+
 					"ON CONFLICT (id) DO UPDATE SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9 RETURNING id;", jobTableName)
 				id := 0
 				err = database.Db.QueryRow(sqlStatement,
-					packetPipelineData.ID,
+					openshiftPipelineData.ID,
 					pipelineJobsdata[j].ID,
 					pipelineJobsdata[j].Status,
 					pipelineJobsdata[j].Stage,
@@ -133,22 +95,22 @@ func PacketData(token, triggredIDColumnName, pipelineTableName, jobTableName str
 				if err != nil {
 					glog.Error(err)
 				}
-				glog.Infoln("New record ID for PACKET Jobs:", id)
+				glog.Infoln("New record ID for OPENSHIFT Jobs:", id)
 			}
 		}
 	}
 }
 
-// packetPipeline will get data from gitlab api and store to DB
-func packetPipeline(token string, pipelineID int) (*PlatformPipeline, error) {
+// openshiftPipeline will get data from gitlab api and store to DB
+func openshiftPipeline(token string, pipelineID int) (*PlatformPipeline, error) {
 	dummyJSON := []byte(`{"id":0,"sha":"00000000000000000000","ref":"none","status":"none","web_url":"none"}`)
 	if pipelineID == 0 {
 		var obj PlatformPipeline
 		json.Unmarshal(dummyJSON, &obj)
 		return &obj, nil
 	}
-	// Store packet pipeline data form gitlab api to packetObj
-	url := BaseURL + "api/v4/projects/" + PACKETID + "/pipelines/" + strconv.Itoa(pipelineID)
+	// Store openshift pipeline data form gitlab api to openshiftObj
+	url := BaseURL + "api/v4/projects/" + OPENSHIFTID + "/pipelines/" + strconv.Itoa(pipelineID)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -169,13 +131,13 @@ func packetPipeline(token string, pipelineID int) (*PlatformPipeline, error) {
 	return &obj, nil
 }
 
-// packetPipelineJobs will get pipeline jobs details from gitlab jobs api
-func packetPipelineJobs(pipelineID int, token string) (Jobs, error) {
-	// Generate pipeline jobs api url using BaseURL, pipelineID and PACKETID
+// openshiftPipelineJobs will get pipeline jobs details from gitlab jobs api
+func openshiftPipelineJobs(pipelineID int, token string) (Jobs, error) {
+	// Generate pipeline jobs api url using BaseURL, pipelineID and OPENSHIFTID
 	if pipelineID == 0 {
 		return nil, nil
 	}
-	url := BaseURL + "api/v4/projects/" + PACKETID + "/pipelines/" + strconv.Itoa(pipelineID) + "/jobs?per_page=50"
+	url := BaseURL + "api/v4/projects/" + OPENSHIFTID + "/pipelines/" + strconv.Itoa(pipelineID) + "/jobs?per_page=50"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -196,9 +158,9 @@ func packetPipelineJobs(pipelineID int, token string) (Jobs, error) {
 	return obj, nil
 }
 
-// QueryPacketData fetch the pipeline data as well as jobs data form Packet table of database
-func QueryPacketData(datas *dashboard, pipelineTableName string, jobTableName string) error {
-	// Select all data from packetpipeline table of DB
+// QueryOpenshiftData fetch the pipeline data as well as jobs data form Openshift table of database
+func QueryOpenshiftData(datas *dashboard, pipelineTableName string, jobTableName string) error {
+	// Select all data from Openshiftpipeline table of DB
 	query := fmt.Sprintf("SELECT id,sha,ref,status,web_url,kibana_url FROM %s ORDER BY build_pipelineid DESC;", pipelineTableName)
 	pipelinerows, err := database.Db.Query(query)
 	if err != nil {
@@ -220,7 +182,7 @@ func QueryPacketData(datas *dashboard, pipelineTableName string, jobTableName st
 		if err != nil {
 			return err
 		}
-		// Query packetjobs data of respective pipeline using pipelineID from packetjobs table
+		// Query Openshiftjobs data of respective pipeline using pipelineID from Openshiftjobs table
 		jobsquery := fmt.Sprintf("SELECT * FROM %s WHERE pipelineid = $1 ORDER BY id;", jobTableName)
 		jobsrows, err := database.Db.Query(jobsquery, pipelinedata.ID)
 		if err != nil {
