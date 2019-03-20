@@ -34,41 +34,31 @@ func Buildhandler(w http.ResponseWriter, r *http.Request) {
 
 // BuildData from gitlab api and store to database
 func BuildData(token string) {
-	jivaPipelineData, err := pipelineData("jiva", token)
+	project := "jiva"
+	jivaPipelineData, err := pipelineData(project, token)
 	if err != nil {
 		glog.Error(err)
 		return
 	}
-	project = "jiva"
 	for i := range jivaPipelineData {
-		jivaJobsData, err := pipelineJobsData(jivaPipelineData[i].ID, token, "jiva")
+		jivaJobsData, err := pipelineJobsData(jivaPipelineData[i].ID, token, project)
 		if err != nil {
 			glog.Error(err)
 			return
 		}
 		// Getting webURL link for getting triggredID
 		baselineJobsWebURL := getBaselineJobWebURL(jivaJobsData)
-		// Get GKE, Triggred pipeline ID for jiva build
-		packetV11PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-11")
-		if err != nil {
-			glog.Error(err)
-		}
-		// Get EKS, Triggred pipeline ID for jiva build
-		packetV12PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-12")
-		if err != nil {
-			glog.Error(err)
-		}
-		// Get AKS, Triggred pipeline ID for jiva build
-		packetV13PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-13")
+		// Get Openshift, Triggred pipeline ID for jiva build
+		openshiftPID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-openshift")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Add jiva pipelines data to Database
 		sqlStatement := `
-			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid, openshift_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 0)
+			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, openshift_pid)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
 			ON CONFLICT (id) DO UPDATE
-			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9
+			SET status = $5, openshift_pid = $7
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
@@ -78,9 +68,7 @@ func BuildData(token string) {
 			jivaPipelineData[i].Ref,
 			jivaPipelineData[i].Status,
 			jivaPipelineData[i].WebURL,
-			packetV11PID,
-			packetV12PID,
-			packetV13PID,
+			openshiftPID,
 		).Scan(&id)
 		if err != nil {
 			glog.Error(err)
@@ -117,40 +105,30 @@ func BuildData(token string) {
 	}
 
 	project = "maya"
-	mayaPipelineData, err := pipelineData("maya", token)
+	mayaPipelineData, err := pipelineData(project, token)
 	if err != nil {
 		glog.Error(err)
 		return
 	}
 	for i := range mayaPipelineData {
-		mayaJobsData, err := pipelineJobsData(mayaPipelineData[i].ID, token, "maya")
+		mayaJobsData, err := pipelineJobsData(mayaPipelineData[i].ID, token, project)
 		if err != nil {
 			glog.Error(err)
 			return
 		}
 		// Getting webURL link for getting triggredID
 		baselineJobsWebURL := getBaselineJobWebURL(mayaJobsData)
-		// Get GKE, Triggred pipeline ID for maya build
-		packetV11PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-11")
-		if err != nil {
-			glog.Error(err)
-		}
-		// Get EKS, Triggred pipeline ID for maya build
-		packetV12PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-12")
-		if err != nil {
-			glog.Error(err)
-		}
-		// Get AKS, Triggred pipeline ID for maya build
-		packetV13PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-13")
+		// Get Openshift, Triggred pipeline ID for maya build
+		openshiftPID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-openshift")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Add maya pipelines data to Database
 		sqlStatement := `
-			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid, openshift_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 0)
+			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, openshift_pid)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
 			ON CONFLICT (id) DO UPDATE
-			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9
+			SET status = $5, openshift_pid = $7
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
@@ -160,9 +138,7 @@ func BuildData(token string) {
 			mayaPipelineData[i].Ref,
 			mayaPipelineData[i].Status,
 			mayaPipelineData[i].WebURL,
-			packetV11PID,
-			packetV12PID,
-			packetV13PID,
+			openshiftPID,
 		).Scan(&id)
 		if err != nil {
 			glog.Error(err)
@@ -199,40 +175,30 @@ func BuildData(token string) {
 	}
 
 	project = "zfs"
-	zfsPipelineData, err := pipelineData("zfs", token)
+	zfsPipelineData, err := pipelineData(project, token)
 	if err != nil {
 		glog.Error(err)
 		return
 	}
 	for i := range zfsPipelineData {
-		zfsJobsData, err := pipelineJobsData(zfsPipelineData[i].ID, token, "zfs")
+		zfsJobsData, err := pipelineJobsData(zfsPipelineData[i].ID, token, project)
 		if err != nil {
 			glog.Error(err)
 			return
 		}
 		// Getting webURL link for getting triggredID
 		baselineJobsWebURL := getBaselineJobWebURL(zfsJobsData)
-		// Get GKE, Triggred pipeline ID for zfs build
-		packetV11PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-11")
-		if err != nil {
-			glog.Error(err)
-		}
-		// Get EKS, Triggred pipeline ID for zfs build
-		packetV12PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-12")
-		if err != nil {
-			glog.Error(err)
-		}
-		// Get AKS, Triggred pipeline ID for zfs build
-		packetV13PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-13")
+		// Get Openshift, Triggred pipeline ID for ZFS build
+		openshiftPID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-openshift")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Add zfs pipelines data to Database
 		sqlStatement := `
-			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid, openshift_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 0)
+			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, openshift_pid)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
 			ON CONFLICT (id) DO UPDATE
-			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9
+			SET status = $5, openshift_pid = $7
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
@@ -242,9 +208,7 @@ func BuildData(token string) {
 			zfsPipelineData[i].Ref,
 			zfsPipelineData[i].Status,
 			zfsPipelineData[i].WebURL,
-			packetV11PID,
-			packetV12PID,
-			packetV13PID,
+			openshiftPID,
 		).Scan(&id)
 		if err != nil {
 			glog.Error(err)
@@ -294,27 +258,17 @@ func BuildData(token string) {
 		}
 		// Getting webURL link for getting triggredID
 		baselineJobsWebURL := getBaselineJobWebURL(istgtJobsData)
-		// Get GKE, Triggred pipeline ID for istgt build
-		packetV11PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-11")
-		if err != nil {
-			glog.Error(err)
-		}
-		// Get EKS, Triggred pipeline ID for istgt build
-		packetV12PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-12")
-		if err != nil {
-			glog.Error(err)
-		}
-		// Get AKS, Triggred pipeline ID for istgt build
-		packetV13PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-13")
+		// Get Openshift, Triggred pipeline ID for ISTGT build
+		openshiftPID, err := getTriggerPipelineid(baselineJobsWebURL, "e2e-openshift")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Add istgt pipelines data to Database
 		sqlStatement := `
-			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid, openshift_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 0)
+			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, openshift_pid)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
 			ON CONFLICT (id) DO UPDATE
-			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9
+			SET status = $5, openshift_pid = $7
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
@@ -324,9 +278,7 @@ func BuildData(token string) {
 			istgtPipelineData[i].Ref,
 			istgtPipelineData[i].Status,
 			istgtPipelineData[i].WebURL,
-			packetV11PID,
-			packetV12PID,
-			packetV13PID,
+			openshiftPID,
 		).Scan(&id)
 		if err != nil {
 			glog.Error(err)
@@ -361,71 +313,6 @@ func BuildData(token string) {
 			glog.Infoln("New record ID for istgt pipeline Jobs:", id)
 		}
 	}
-
-	project = "openshift"
-	openshiftPipelineData, err := pipelineData("openshift", token)
-	if err != nil {
-		glog.Error(err)
-		return
-	}
-	for i := range openshiftPipelineData {
-		openshiftJobsData, err := pipelineJobsData(openshiftPipelineData[i].ID, token, "openshift")
-		if err != nil {
-			glog.Error(err)
-			return
-		}
-		sqlStatement := `
-			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid, openshift_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-			ON CONFLICT (id) DO UPDATE
-			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9, openshift_pid = $10
-			RETURNING id`
-		id := 0
-		err = database.Db.QueryRow(sqlStatement,
-			project,
-			openshiftPipelineData[i].ID,
-			openshiftPipelineData[i].Sha,
-			openshiftPipelineData[i].Ref,
-			openshiftPipelineData[i].Status,
-			openshiftPipelineData[i].WebURL,
-			"0",
-			"0",
-			"0",
-			openshiftPipelineData[i].ID,
-		).Scan(&id)
-		if err != nil {
-			glog.Error(err)
-		}
-		glog.Infoln("New record ID for openshift Pipeline:", id)
-
-		// Add istgt jobs data to Database
-		for j := range openshiftJobsData {
-			sqlStatement := `
-				INSERT INTO build_jobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-				ON CONFLICT (id) DO UPDATE
-				SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9
-				RETURNING id`
-			id := 0
-			err = database.Db.QueryRow(sqlStatement,
-				openshiftPipelineData[i].ID,
-				openshiftJobsData[j].ID,
-				openshiftJobsData[j].Status,
-				openshiftJobsData[j].Stage,
-				openshiftJobsData[j].Name,
-				openshiftJobsData[j].Ref,
-				openshiftJobsData[j].CreatedAt,
-				openshiftJobsData[j].StartedAt,
-				openshiftJobsData[j].FinishedAt,
-				openshiftJobsData[j].Commit.Message,
-				openshiftJobsData[j].Commit.AuthorName,
-			).Scan(&id)
-			if err != nil {
-				glog.Error(err)
-			}
-			glog.Infoln("New record ID for openshift pipeline Jobs:", id)
-		}
-	}
 	err = modifyBuildData()
 	if err != nil {
 		glog.Error(err)
@@ -457,9 +344,6 @@ func queryBuildData(datas *Builddashboard) error {
 			&pipelinedata.Ref,
 			&pipelinedata.Status,
 			&pipelinedata.WebURL,
-			&pipelinedata.PacketV11PID,
-			&pipelinedata.PacketV12PID,
-			&pipelinedata.PacketV13PID,
 			&pipelinedata.OpenshiftPID,
 		)
 		if err != nil {
@@ -503,7 +387,8 @@ func queryBuildData(datas *Builddashboard) error {
 	return nil
 }
 
-func getTriggerPipelineid(jobURL, k8sVersion string) (string, error) {
+// getTriggerPipelineid wil fetch the triggred pipeline ID using filter of raw file
+func getTriggerPipelineid(jobURL, filter string) (string, error) {
 	url := jobURL + "/raw"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -521,7 +406,7 @@ func getTriggerPipelineid(jobURL, k8sVersion string) (string, error) {
 	if data == "" {
 		return "0", nil
 	}
-	grep := exec.Command("grep", "-oP", "(?<="+k8sVersion+")[^ ]*")
+	grep := exec.Command("grep", "-oP", "(?<="+filter+"/pipelines/)[^ ]*")
 	ps := exec.Command("echo", data)
 
 	// Get ps's stdout and attach it to grep's stdin.
@@ -532,18 +417,14 @@ func getTriggerPipelineid(jobURL, k8sVersion string) (string, error) {
 
 	// Run and get the output of grep.
 	value, _ := grep.Output()
-	if string(value) == "" {
-		return "0", nil
-	}
 	result := strings.Split(string(value), "\"")
-	result = strings.Split(string(result[8]), "/")
-	if result[6] == "" {
+	if result[0] == "" {
 		return "0", nil
 	}
-	return result[6], nil
+	return result[0], nil
 }
 
-// // jivaPipelineJobs will get pipeline jobs details from gitlab api
+// pipelineJobsData will get pipeline jobs details from gitlab api
 func pipelineJobsData(id int, token string, project string) (BuildJobs, error) {
 	url := jobURLGenerator(id, project)
 	req, err := http.NewRequest("GET", url, nil)
@@ -606,9 +487,6 @@ func pipelineURLGenerator(project string) string {
 	} else if project == "zfs" {
 		projectID = ZFSID
 		Branch = ZFSBRANCH
-	} else if project == "openshift" {
-		projectID = OPENSHIFTID
-		Branch = "master"
 	}
 	generatedURL := BaseURL + "api/v4/projects/" + projectID + "/pipelines?ref=" + Branch
 	return generatedURL
@@ -625,8 +503,6 @@ func jobURLGenerator(id int, project string) string {
 		projectID = ISTGTID
 	} else if project == "zfs" {
 		projectID = ZFSID
-	} else if project == "openshift" {
-		projectID = OPENSHIFTID
 	}
 	generatedURL := BaseURL + "api/v4/projects/" + projectID + "/pipelines/" + strconv.Itoa(id) + "/jobs?per_page=50"
 	return generatedURL

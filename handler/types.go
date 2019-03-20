@@ -13,10 +13,10 @@ const (
 // BranchName assignment from gitlab repository
 const (
 	GROUPNAME   = "openebs"
-	MAYABRANCH  = "master"
-	JIVABRANCH  = "master"
-	ISTGTBRANCH = "replication"
-	ZFSBRANCH   = "zfs-0.7-release"
+	MAYABRANCH  = "v0.8.x"
+	JIVABRANCH  = "v0.8.x"
+	ISTGTBRANCH = "v0.8.x"
+	ZFSBRANCH   = "v0.8.x"
 )
 
 var project string
@@ -135,9 +135,6 @@ type BuildpipelineSummary struct {
 	Ref          string             `json:"ref"`
 	Status       string             `json:"status"`
 	WebURL       string             `json:"web_url"`
-	PacketV11PID string             `json:"packet_v11_pid"`
-	PacketV12PID string             `json:"packet_v12_pid"`
-	PacketV13PID string             `json:"packet_v13_pid"`
 	OpenshiftPID string             `json:"openshift_pid"`
 	Jobs         []BuildJobssummary `json:"jobs"`
 }
