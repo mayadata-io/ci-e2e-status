@@ -143,3 +143,17 @@ type BuildpipelineSummary struct {
 type Builddashboard struct {
 	Dashboard []BuildpipelineSummary `json:"dashboard"`
 }
+
+type commit []struct {
+	ID string `json:"id"`
+}
+
+type commitPipeline struct {
+	LastPipeline struct {
+		ID     int    `json:"id"`
+		Sha    string `json:"sha"`
+		Ref    string `json:"ref"`
+		Status string `json:"status"`
+		WebURL string `json:"web_url"`
+	} `json:"last_pipeline"`
+}
