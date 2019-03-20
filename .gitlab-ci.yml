@@ -1,24 +1,13 @@
 before_script:
 - docker info
-build-staging:
-  stage: build 
-  only:
-  - staging
-  script :
-  - export REPO=openebs/staging-ci-dashboard-postgres
-  - export COMMIT=${CI_COMMIT_SHA:0:8}
-  - docker login -u "$DOCKER_USER" -p "$DOCKER_PASS" && docker build --no-cache -t $REPO:$COMMIT . && docker push $REPO:$COMMIT
-  - docker images
-  - docker rmi $REPO:$COMMIT
-  - docker images
 build:
   stage: build
   only:
-  - master
+  - mdape2e
   script :
   - export REPO=openebs/ci-dashboard-postgres
   - export COMMIT=${CI_COMMIT_SHA:0:8}
-  - docker login -u "$DOCKER_USER" -p "$DOCKER_PASS" && docker build --no-cache -t $REPO:$COMMIT . && docker push $REPO:$COMMIT
+  - docker login -u "$DOCKER_USER" -p "$DOCKER_PASS" && docker build --no-cache -t $REPO:mdape2e-$COMMIT . && docker push $REPO:mdape2e-$COMMIT
   - docker images
   - docker rmi $REPO:$COMMIT
   - docker images
