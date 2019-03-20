@@ -5,9 +5,7 @@ build:
   only:
   - mdape2e
   script :
-  - export REPO=openebs/ci-dashboard-postgres
+  - export REPO=mayadataio/ci-dashboard-postgres
   - export COMMIT=${CI_COMMIT_SHA:0:8}
-  - docker login -u "$DOCKER_USER" -p "$DOCKER_PASS" && docker build --no-cache -t $REPO:mdape2e-$COMMIT . && docker push $REPO:mdape2e-$COMMIT
-  - docker images
-  - docker rmi $REPO:mdape2e-$COMMIT
+  - docker login -u "$DOCKER_USER_MDAP" -p "$DOCKER_PASS_MDAP" && docker build --no-cache -t $REPO:mdape2e-$COMMIT . && docker push $REPO:mdape2e-$COMMIT
   - docker images
