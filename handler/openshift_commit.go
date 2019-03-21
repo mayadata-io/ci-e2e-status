@@ -1,0 +1,98 @@
+package handler
+
+import (
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
+
+	"github.com/golang/glog"
+	"github.com/openebs/ci-e2e-dashboard-go-backend/database"
+)
+
+// openshiftCommit from gitlab api and store to database
+func openshiftCommit(token, project string) {
+	commitData, err := getcommitData(token)
+	if err != nil {
+		glog.Error(err)
+		return
+	}
+	for i := range commitData {
+		pipelineDetail, err := getTriggredPipelineDetail(commitData[i].ID, token)
+		if err != nil {
+			glog.Error(err)
+			return
+		}
+		// Add pipelines data to Database
+		sqlStatement := `
+			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, openshift_pid)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
+			ON CONFLICT (id) DO UPDATE
+			SET status = $5, openshift_pid = $7
+			RETURNING id`
+		id := 0
+		err = database.Db.QueryRow(sqlStatement,
+			project,
+			pipelineDetail.ID,
+			pipelineDetail.Sha,
+			pipelineDetail.Ref,
+			pipelineDetail.Status,
+			pipelineDetail.WebURL,
+			pipelineDetail.ID,
+		).Scan(&id)
+		if err != nil {
+			glog.Error(err)
+		}
+		glog.Infof("New record ID for %s Pipeline: %d", project, id)
+	}
+}
+
+// getcommitData will fetch the commit data from gitlab API
+func getcommitData(token string) (commit, error) {
+	URL := BaseURL + "api/v4/projects/" + OPENSHIFTID + "/repository/commits?ref_name=OpenEBS-base"
+	req, err := http.NewRequest("GET", URL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Close = true
+	req.Header.Set("Connection", "close")
+	req.Header.Add("PRIVATE-TOKEN", token)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	data, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	var obj commit
+	json.Unmarshal(data, &obj)
+	return obj, nil
+}
+
+// pipelineJobsData will get pipeline jobs details from gitlab api
+func getTriggredPipelineDetail(id, token string) (PlatformPipeline, error) {
+	url := BaseURL + "api/v4/projects/" + OPENSHIFTID + "/repository/commits/" + id
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		q := PlatformPipeline{}
+		return q, err
+	}
+	req.Close = true
+	req.Header.Set("Connection", "close")
+	req.Header.Add("PRIVATE-TOKEN", token)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		q := PlatformPipeline{}
+		return q, err
+	}
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		q := PlatformPipeline{}
+		return q, err
+	}
+	var obj commitPipeline
+	json.Unmarshal(body, &obj)
+	return obj.LastPipeline, nil
+}
