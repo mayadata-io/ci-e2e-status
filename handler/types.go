@@ -57,6 +57,10 @@ type Jobs []struct {
 	CreatedAt  string `json:"created_at"`
 	StartedAt  string `json:"started_at"`
 	FinishedAt string `json:"finished_at"`
+	Commit     struct {
+		Message    string `json:"message"`
+		AuthorName string `json:"author_name"`
+	} `json:"commit"`
 }
 
 // Jobssummary struct
@@ -70,6 +74,8 @@ type Jobssummary struct {
 	CreatedAt  string `json:"created_at"`
 	StartedAt  string `json:"started_at"`
 	FinishedAt string `json:"finished_at"`
+	Message    string `json:"message"`
+	AuthorName string `json:"author_name"`
 }
 
 // TriggredID contains the details of a gitlab pipelines
