@@ -15,9 +15,9 @@ func main() {
 	flag.Lookup("logtostderr").Value.Set("true")
 	// Initailze Db connection
 	database.InitDb()
-	// Return value to all / api path
-	http.HandleFunc("/openshift", handler.OpenshiftHandler)
-	http.HandleFunc("/build", handler.Buildhandler)
+	// Return value to /api path
+	http.HandleFunc("/api/openshift", handler.OpenshiftHandler)
+	http.HandleFunc("/api/build", handler.Buildhandler)
 	glog.Infof("Listening on http://0.0.0.0:3000")
 
 	// Trigger db update function
