@@ -39,32 +39,32 @@ func OpenshiftData(token, triggredIDColumnName, pipelineTableName, jobTableName 
 	}
 	for openshiftPipelineID.Next() {
 		var logURL string
-		pipelinedata := TriggredID{}
+		pipelineData := TriggredID{}
 		err = openshiftPipelineID.Scan(
-			&pipelinedata.BuildPID,
-			&pipelinedata.ID,
+			&pipelineData.BuildPID,
+			&pipelineData.ID,
 		)
 		defer openshiftPipelineID.Close()
-		openshiftPipelineData, err := openshiftPipeline(token, pipelinedata.ID)
+		openshiftPipelineData, err := openshiftPipeline(token, pipelineData.ID)
 		if err != nil {
 			glog.Error(err)
 			return
 		}
-		pipelineJobsdata, err := openshiftPipelineJobs(openshiftPipelineData.ID, token)
+		pipelineJobsData, err := openshiftPipelineJobs(openshiftPipelineData.ID, token)
 		if err != nil {
 			glog.Error(err)
 			return
 		}
-		if pipelinedata.ID != 0 && len(pipelineJobsdata) != 0 {
-			jobStartedAt := pipelineJobsdata[0].StartedAt
-			JobFinishedAt := pipelineJobsdata[len(pipelineJobsdata)-1].FinishedAt
+		if pipelineData.ID != 0 && len(pipelineJobsData) != 0 {
+			jobStartedAt := pipelineJobsData[0].StartedAt
+			JobFinishedAt := pipelineJobsData[len(pipelineJobsData)-1].FinishedAt
 			logURL = Kibanaloglink(openshiftPipelineData.Sha, openshiftPipelineData.ID, openshiftPipelineData.Status, jobStartedAt, JobFinishedAt)
 		}
 		sqlStatement := fmt.Sprintf("INSERT INTO %s (build_pipelineid, id, sha, ref, status, web_url, kibana_url) VALUES ($1, $2, $3, $4, $5, $6, $7)"+
 			"ON CONFLICT (build_pipelineid) DO UPDATE SET id = $2, sha = $3, ref = $4, status = $5, web_url = $6, kibana_url = $7 RETURNING id;", pipelineTableName)
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
-			pipelinedata.BuildPID,
+			pipelineData.BuildPID,
 			openshiftPipelineData.ID,
 			openshiftPipelineData.Sha,
 			openshiftPipelineData.Ref,
@@ -76,21 +76,23 @@ func OpenshiftData(token, triggredIDColumnName, pipelineTableName, jobTableName 
 			glog.Error(err)
 		}
 		glog.Infoln("New record ID for OPENSHIFT Pipeline:", id)
-		if pipelinedata.ID != 0 {
-			for j := range pipelineJobsdata {
-				sqlStatement := fmt.Sprintf("INSERT INTO %s (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"+
+		if pipelineData.ID != 0 {
+			for j := range pipelineJobsData {
+				sqlStatement := fmt.Sprintf("INSERT INTO %s (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"+
 					"ON CONFLICT (id) DO UPDATE SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9 RETURNING id;", jobTableName)
 				id := 0
 				err = database.Db.QueryRow(sqlStatement,
 					openshiftPipelineData.ID,
-					pipelineJobsdata[j].ID,
-					pipelineJobsdata[j].Status,
-					pipelineJobsdata[j].Stage,
-					pipelineJobsdata[j].Name,
-					pipelineJobsdata[j].Ref,
-					pipelineJobsdata[j].CreatedAt,
-					pipelineJobsdata[j].StartedAt,
-					pipelineJobsdata[j].FinishedAt,
+					pipelineJobsData[j].ID,
+					pipelineJobsData[j].Status,
+					pipelineJobsData[j].Stage,
+					pipelineJobsData[j].Name,
+					pipelineJobsData[j].Ref,
+					pipelineJobsData[j].CreatedAt,
+					pipelineJobsData[j].StartedAt,
+					pipelineJobsData[j].FinishedAt,
+					pipelineJobsData[j].Commit.Message,
+					pipelineJobsData[j].Commit.AuthorName,
 				).Scan(&id)
 				if err != nil {
 					glog.Error(err)
@@ -170,51 +172,53 @@ func QueryOpenshiftData(datas *dashboard, pipelineTableName string, jobTableName
 	defer pipelinerows.Close()
 	// Iterate on each rows of pipeline table data for perform more operation related to pipeline Data
 	for pipelinerows.Next() {
-		pipelinedata := pipelineSummary{}
+		pipelineData := pipelineSummary{}
 		err = pipelinerows.Scan(
-			&pipelinedata.ID,
-			&pipelinedata.Sha,
-			&pipelinedata.Ref,
-			&pipelinedata.Status,
-			&pipelinedata.WebURL,
-			&pipelinedata.LogURL,
+			&pipelineData.ID,
+			&pipelineData.Sha,
+			&pipelineData.Ref,
+			&pipelineData.Status,
+			&pipelineData.WebURL,
+			&pipelineData.LogURL,
 		)
 		if err != nil {
 			return err
 		}
 		// Query Openshiftjobs data of respective pipeline using pipelineID from Openshiftjobs table
-		jobsquery := fmt.Sprintf("SELECT * FROM %s WHERE pipelineid = $1 ORDER BY id;", jobTableName)
-		jobsrows, err := database.Db.Query(jobsquery, pipelinedata.ID)
+		jobsQuery := fmt.Sprintf("SELECT * FROM %s WHERE pipelineid = $1 ORDER BY id;", jobTableName)
+		jobsRows, err := database.Db.Query(jobsQuery, pipelineData.ID)
 		if err != nil {
 			return err
 		}
 		// Close DB connection after r/w operation
-		defer jobsrows.Close()
-		jobsdataarray := []Jobssummary{}
+		defer jobsRows.Close()
+		jobsDataArray := []Jobssummary{}
 		// Iterate on each rows of table data for perform more operation related to pipelineJobsData
-		for jobsrows.Next() {
-			jobsdata := Jobssummary{}
-			err = jobsrows.Scan(
-				&jobsdata.PipelineID,
-				&jobsdata.ID,
-				&jobsdata.Status,
-				&jobsdata.Stage,
-				&jobsdata.Name,
-				&jobsdata.Ref,
-				&jobsdata.CreatedAt,
-				&jobsdata.StartedAt,
-				&jobsdata.FinishedAt,
+		for jobsRows.Next() {
+			jobsData := Jobssummary{}
+			err = jobsRows.Scan(
+				&jobsData.PipelineID,
+				&jobsData.ID,
+				&jobsData.Status,
+				&jobsData.Stage,
+				&jobsData.Name,
+				&jobsData.Ref,
+				&jobsData.CreatedAt,
+				&jobsData.StartedAt,
+				&jobsData.FinishedAt,
+				&jobsData.Message,
+				&jobsData.AuthorName,
 			)
 			if err != nil {
 				return err
 			}
 			// Append each row data to an array(jobsDataArray)
-			jobsdataarray = append(jobsdataarray, jobsdata)
+			jobsDataArray = append(jobsDataArray, jobsData)
 			// Add jobs details of pipeline into jobs field of pipelineData
-			pipelinedata.Jobs = jobsdataarray
+			pipelineData.Jobs = jobsDataArray
 		}
 		// Append each pipeline data to datas of field Dashobard
-		datas.Dashboard = append(datas.Dashboard, pipelinedata)
+		datas.Dashboard = append(datas.Dashboard, pipelineData)
 	}
 	err = pipelinerows.Err()
 	if err != nil {
