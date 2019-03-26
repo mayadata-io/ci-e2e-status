@@ -22,6 +22,12 @@ func openshiftCommit(token, project string) {
 			glog.Error(err)
 			return
 		}
+		// pipelineJobsData store the jobs details related to pipeline id
+		pipelineJobsData, err := openshiftPipelineJobs(pipelineDetail.ID, token)
+		if err != nil {
+			glog.Error(err)
+			return
+		}
 		// Add pipelines data to Database
 		sqlStatement := `
 			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, openshift_pid)
@@ -43,6 +49,34 @@ func openshiftCommit(token, project string) {
 			glog.Error(err)
 		}
 		glog.Infof("New record ID for %s Pipeline: %d", project, id)
+
+		// Add pipeline jobs data to Database
+		for j := range pipelineJobsData {
+			sqlStatement := `
+				INSERT INTO build_jobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+				ON CONFLICT (id) DO UPDATE
+				SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9
+				RETURNING id`
+			id := 0
+			err = database.Db.QueryRow(sqlStatement,
+				pipelineDetail.ID,
+				pipelineJobsData[j].ID,
+				pipelineJobsData[j].Status,
+				pipelineJobsData[j].Stage,
+				pipelineJobsData[j].Name,
+				pipelineJobsData[j].Ref,
+				pipelineJobsData[j].CreatedAt,
+				pipelineJobsData[j].StartedAt,
+				pipelineJobsData[j].FinishedAt,
+				pipelineJobsData[j].Commit.Message,
+				pipelineJobsData[j].Commit.AuthorName,
+			).Scan(&id)
+			if err != nil {
+				glog.Error(err)
+			}
+			glog.Infof("New record ID for %s pipeline Jobs: %d", project, id)
+		}
 	}
 }
 
