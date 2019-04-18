@@ -6,8 +6,8 @@ import (
 
 	"github.com/golang/glog"
 	_ "github.com/lib/pq"
-	"github.com/openebs/ci-e2e-dashboard-go-backend/database"
-	"github.com/openebs/ci-e2e-dashboard-go-backend/handler"
+	"github.com/openebs/ci-e2e-status/database"
+	"github.com/openebs/ci-e2e-status/handler"
 )
 
 func main() {

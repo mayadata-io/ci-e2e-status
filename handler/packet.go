@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/golang/glog"
-	"github.com/openebs/ci-e2e-dashboard-go-backend/database"
+	"github.com/openebs/ci-e2e-status/database"
 )
 
 // PacketHandlerV11 return packet pipeline data to /packet path
