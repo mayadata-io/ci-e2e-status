@@ -8,11 +8,11 @@ RUN mkdir /app
 
 RUN mkdir $GOPATH/src/github.com/openebs
 
-RUN mkdir $GOPATH/src/github.com/openebs/ci-e2e-dashboard-go-backend
+RUN mkdir $GOPATH/src/github.com/openebs/ci-e2e-status
 
-ADD . $GOPATH/src/github.com/openebs/ci-e2e-dashboard-go-backend
+ADD . $GOPATH/src/github.com/openebs/ci-e2e-status
 
-WORKDIR $GOPATH/src/github.com/openebs/ci-e2e-dashboard-go-backend
+WORKDIR $GOPATH/src/github.com/openebs/ci-e2e-status
 
 RUN go build -o /app/main .
 
