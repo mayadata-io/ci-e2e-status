@@ -13,10 +13,10 @@ const (
 // BranchName assignment from gitlab repository
 const (
 	GROUPNAME   = "openebs"
-	MAYABRANCH  = "v0.8.x"
-	JIVABRANCH  = "v0.8.x"
-	ISTGTBRANCH = "v0.8.x"
-	ZFSBRANCH   = "v0.8.x"
+	MAYABRANCH  = "v0.9.x"
+	JIVABRANCH  = "v0.9.x"
+	ISTGTBRANCH = "v0.9.x"
+	ZFSBRANCH   = "v0.9.x"
 )
 
 var project string
