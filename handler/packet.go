@@ -166,6 +166,9 @@ func packetPipeline(token string, pipelineID int) (*PlatformPipeline, error) {
 	// Unmarshal response data
 	var obj PlatformPipeline
 	json.Unmarshal(body, &obj)
+	if obj.ID == 0 {
+		return nil, fmt.Errorf("Pipeline data not found")
+	}
 	return &obj, nil
 }
 
