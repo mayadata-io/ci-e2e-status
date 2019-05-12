@@ -7,6 +7,7 @@ import (
 	"github.com/golang/glog"
 	_ "github.com/lib/pq"
 	"github.com/openebs/ci-e2e-status/database"
+	"github.com/openebs/ci-e2e-status/database/router"
 	"github.com/openebs/ci-e2e-status/handler"
 )
 
@@ -16,8 +17,9 @@ func main() {
 	// Initailze Db connection
 	database.InitDb()
 	// Return value to /api path
-	http.HandleFunc("/api/openshift", handler.OpenshiftHandler)
-	http.HandleFunc("/api/build", handler.Buildhandler)
+	http.HandleFunc("/api/master/openshift", handler.OpenshiftHandlerMaster)
+	http.HandleFunc("/api/master/build", handler.BuildhandlerMaster)
+	http.HandleFunc("/api/release/openshift", router.OpenshiftHandlerRelease)
 	glog.Infof("Listening on http://0.0.0.0:3000")
 
 	// Trigger db update function
