@@ -2,16 +2,17 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/golang/glog"
-	"github.com/openebs/ci-e2e-status/database"
+	"github.com/mayadata-io/ci-e2e-status/database"
 )
 
 // openshiftCommit from gitlab api and store to database
-func openshiftCommit(token, project string) {
-	commitData, err := getcommitData(token)
+func openshiftCommit(token, project, branch, pipelineTable, jobTable string) {
+	commitData, err := getcommitData(token, branch)
 	if err != nil {
 		glog.Error(err)
 		return
@@ -29,12 +30,8 @@ func openshiftCommit(token, project string) {
 			return
 		}
 		// Add pipelines data to Database
-		sqlStatement := `
-			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, openshift_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7)
-			ON CONFLICT (id) DO UPDATE
-			SET status = $5, openshift_pid = $7
-			RETURNING id`
+		sqlStatement := fmt.Sprintf("INSERT INTO %s (project, id, sha, ref, status, web_url, openshift_pid) VALUES ($1, $2, $3, $4, $5, $6, $7)"+
+			"ON CONFLICT (id) DO UPDATE SET status = $5, openshift_pid = $7 RETURNING id;", pipelineTable)
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
 			project,
@@ -52,12 +49,8 @@ func openshiftCommit(token, project string) {
 
 		// Add pipeline jobs data to Database
 		for j := range pipelineJobsData {
-			sqlStatement := `
-				INSERT INTO build_jobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-				ON CONFLICT (id) DO UPDATE
-				SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9
-				RETURNING id`
+			sqlStatement := fmt.Sprintf("INSERT INTO %s (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, message, author_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"+
+				"ON CONFLICT (id) DO UPDATE SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9 RETURNING id;", jobTable)
 			id := 0
 			err = database.Db.QueryRow(sqlStatement,
 				pipelineDetail.ID,
@@ -81,8 +74,8 @@ func openshiftCommit(token, project string) {
 }
 
 // getcommitData will fetch the commit data from gitlab API
-func getcommitData(token string) (commit, error) {
-	URL := BaseURL + "api/v4/projects/" + OPENSHIFTID + "/repository/commits?ref_name=OpenEBS-base"
+func getcommitData(token, branch string) (commit, error) {
+	URL := BaseURL + "api/v4/projects/" + OPENSHIFTID + "/repository/commits?ref_name=" + branch
 	req, err := http.NewRequest("GET", URL, nil)
 	if err != nil {
 		return nil, err

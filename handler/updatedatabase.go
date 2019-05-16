@@ -15,8 +15,15 @@ func UpdateDatabase() {
 	if !ok {
 		glog.Fatalf("TOKEN environment variable required")
 	}
-	// Fetch the e2e-openshift commit based pipeline
-	openshiftCommit(token, "e2e-openshift")
+	triggerType := []string{"master", "release"}
+	for _, t := range triggerType {
+		// Fetch the e2e-openshift commit based pipeline
+		if t == "master" {
+			openshiftCommit(token, "e2e-openshift", "OpenEBS-base", "build_pipeline", "build_jobs")
+		} else {
+			openshiftCommit(token, "e2e-openshift", "0-9-release", "release_pipeline_data", "release_jobs_data")
+		}
+	}
 	// Update the database, This wil run only first time
 	projects := []string{"maya", "jiva", "istgt", "zfs"}
 	for _, project := range projects {
@@ -27,7 +34,14 @@ func UpdateDatabase() {
 	tick := time.Tick(10 * time.Minute)
 	for range tick {
 		// Fetch the e2e-openshift commit based pipeline
-		openshiftCommit(token, "e2e-openshift")
+		for _, t := range triggerType {
+			// Fetch the e2e-openshift commit based pipeline
+			if t == "master" {
+				openshiftCommit(token, "e2e-openshift", "OpenEBS-base", "build_pipeline", "build_jobs")
+			} else {
+				openshiftCommit(token, "e2e-openshift", "0-9-release", "release_pipeline_data", "release_jobs_data")
+			}
+		}
 		// Fetch the pipeline detail of specified projects
 		for _, project := range projects {
 			BuildData(token, project)

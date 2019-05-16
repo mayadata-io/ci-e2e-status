@@ -8,11 +8,11 @@ import (
 	"strconv"
 
 	"github.com/golang/glog"
-	"github.com/openebs/ci-e2e-status/database"
+	"github.com/mayadata-io/ci-e2e-status/database"
 )
 
-// OpenshiftHandler return openshift pipeline data to /openshift path
-func OpenshiftHandler(w http.ResponseWriter, r *http.Request) {
+// OpenshiftHandlerMaster return openshift pipeline data to /openshift path
+func OpenshiftHandlerMaster(w http.ResponseWriter, r *http.Request) {
 	// Allow cross origin request
 	(w).Header().Set("Access-Control-Allow-Origin", "*")
 	datas := dashboard{}

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os/exec"
@@ -9,15 +10,15 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
-	"github.com/openebs/ci-e2e-status/database"
+	"github.com/mayadata-io/ci-e2e-status/database"
 )
 
-// Buildhandler return eks pipeline data to /build path
-func Buildhandler(w http.ResponseWriter, r *http.Request) {
+// BuildhandlerMaster return eks pipeline data to /build path
+func BuildhandlerMaster(w http.ResponseWriter, r *http.Request) {
 	// Allow cross origin request
 	(w).Header().Set("Access-Control-Allow-Origin", "*")
 	datas := Builddashboard{}
-	err := queryBuildData(&datas)
+	err := QueryBuildData(&datas, "build_pipeline", "build_jobs")
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		glog.Error(err)
@@ -117,9 +118,10 @@ func modifyBuildData() error {
 	return nil
 }
 
-// queryBuildData fetches the builddashboard data from the db
-func queryBuildData(datas *Builddashboard) error {
-	pipelinerows, err := database.Db.Query(`SELECT * FROM build_pipeline ORDER BY id DESC`)
+// QueryBuildData fetches the builddashboard data from the db
+func QueryBuildData(datas *Builddashboard, pipelineTable string, jobsTable string) error {
+	pipelineQuery := fmt.Sprintf("SELECT * FROM %s ORDER BY id DESC;", pipelineTable)
+	pipelinerows, err := database.Db.Query(pipelineQuery)
 	if err != nil {
 		return err
 	}
@@ -139,7 +141,7 @@ func queryBuildData(datas *Builddashboard) error {
 			return err
 		}
 
-		jobsquery := `SELECT * FROM build_jobs WHERE pipelineid = $1 ORDER BY id`
+		jobsquery := fmt.Sprintf("SELECT * FROM %s WHERE pipelineid = $1 ORDER BY id;", jobsTable)
 		jobsrows, err := database.Db.Query(jobsquery, pipelinedata.ID)
 		if err != nil {
 			return err
