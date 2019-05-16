@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/golang/glog"
-	"github.com/openebs/ci-e2e-status/database"
+	"github.com/mayadata-io/ci-e2e-status/database"
 )
 
 // openshiftCommit from gitlab api and store to database

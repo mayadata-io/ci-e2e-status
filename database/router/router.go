@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/golang/glog"
-	"github.com/openebs/ci-e2e-status/handler"
+	"github.com/mayadata-io/ci-e2e-status/handler"
 )
 
 // OpenshiftHandlerRelease return eks pipeline data to /build path
