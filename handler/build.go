@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
-	"github.com/openebs/ci-e2e-status/database"
+	"github.com/mayadata-io/ci-e2e-status/database"
 )
 
 // Buildhandler return eks pipeline data to /build path
