@@ -21,7 +21,7 @@ func UpdateDatabase() {
 		if t == "master" {
 			openshiftCommit(token, "e2e-openshift", "OpenEBS-base", "build_pipeline", "build_jobs")
 		} else {
-			openshiftCommit(token, "e2e-openshift", "0-9-release", "release_pipeline_data", "release_jobs_data")
+			openshiftCommit(token, "e2e-openshift", "release-branch", "release_pipeline_data", "release_jobs_data")
 		}
 	}
 	// Update the database, This wil run only first time
@@ -39,7 +39,7 @@ func UpdateDatabase() {
 			if t == "master" {
 				openshiftCommit(token, "e2e-openshift", "OpenEBS-base", "build_pipeline", "build_jobs")
 			} else {
-				openshiftCommit(token, "e2e-openshift", "0-9-release", "release_pipeline_data", "release_jobs_data")
+				openshiftCommit(token, "e2e-openshift", "release-branch", "release_pipeline_data", "release_jobs_data")
 			}
 		}
 		// Fetch the pipeline detail of specified projects
