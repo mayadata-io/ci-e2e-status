@@ -295,7 +295,7 @@ func jobURLGenerator(id int, project string) string {
 	} else if project == "zfs" {
 		projectID = ZFSID
 	}
-	generatedURL := BaseURL + "api/v4/projects/" + projectID + "/pipelines/" + strconv.Itoa(id) + "/jobs?per_page=50"
+	generatedURL := BaseURL + "api/v4/projects/" + projectID + "/pipelines/" + strconv.Itoa(id) + "/jobs?per_page=100"
 	return generatedURL
 }
 
