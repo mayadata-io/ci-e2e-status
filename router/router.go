@@ -13,7 +13,7 @@ func OpenshiftHandlerRelease(w http.ResponseWriter, r *http.Request) {
 	// Allow cross origin request
 	(w).Header().Set("Access-Control-Allow-Origin", "*")
 	datas := handler.Builddashboard{}
-	err := handler.QueryBuildData(&datas, "release_pipeline_data", "release_jobs_data")
+	err := handler.QueryOpenshiftReleaseData(&datas, "release_pipeline_data", "release_jobs_data")
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		glog.Error(err)
