@@ -35,6 +35,7 @@ func BuildhandlerMaster(w http.ResponseWriter, r *http.Request) {
 
 // BuildData from gitlab api and store to database
 func BuildData(token, project string) {
+	var logURL string
 	pipelineData, err := getPipelineData(project, token)
 	if err != nil {
 		glog.Error(err)
@@ -55,8 +56,8 @@ func BuildData(token, project string) {
 		}
 		// Add pipelines data to Database
 		sqlStatement := `
-			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, openshift_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7)
+			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, openshift_pid, kibana_url)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 			ON CONFLICT (id) DO UPDATE
 			SET status = $5, openshift_pid = $7
 			RETURNING id`
@@ -69,6 +70,7 @@ func BuildData(token, project string) {
 			pipelineData[i].Status,
 			pipelineData[i].WebURL,
 			openshiftPID,
+			logURL,
 		).Scan(&id)
 		if err != nil {
 			glog.Error(err)
@@ -136,6 +138,7 @@ func QueryBuildData(datas *Builddashboard, pipelineTable string, jobsTable strin
 			&pipelinedata.Status,
 			&pipelinedata.WebURL,
 			&pipelinedata.OpenshiftPID,
+			&pipelinedata.LogURL,
 		)
 		if err != nil {
 			return err

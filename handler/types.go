@@ -142,6 +142,7 @@ type BuildpipelineSummary struct {
 	Status       string             `json:"status"`
 	WebURL       string             `json:"web_url"`
 	OpenshiftPID string             `json:"openshift_pid"`
+	LogURL       string             `json:"kibana_url" `
 	Jobs         []BuildJobssummary `json:"jobs"`
 }
 

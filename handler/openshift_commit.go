@@ -12,6 +12,7 @@ import (
 
 // openshiftCommit from gitlab api and store to database
 func openshiftCommit(token, project, branch, pipelineTable, jobTable string) {
+	var logURL string
 	commitData, err := getcommitData(token, branch)
 	if err != nil {
 		glog.Error(err)
@@ -29,9 +30,14 @@ func openshiftCommit(token, project, branch, pipelineTable, jobTable string) {
 			glog.Error(err)
 			return
 		}
+		if pipelineDetail.ID != 0 && len(pipelineJobsData) != 0 {
+			jobStartedAt := pipelineJobsData[0].StartedAt
+			JobFinishedAt := pipelineJobsData[len(pipelineJobsData)-1].FinishedAt
+			logURL = Kibanaloglink(pipelineDetail.Sha, pipelineDetail.ID, pipelineDetail.Status, jobStartedAt, JobFinishedAt)
+		}
 		// Add pipelines data to Database
-		sqlStatement := fmt.Sprintf("INSERT INTO %s (project, id, sha, ref, status, web_url, openshift_pid) VALUES ($1, $2, $3, $4, $5, $6, $7)"+
-			"ON CONFLICT (id) DO UPDATE SET status = $5, openshift_pid = $7 RETURNING id;", pipelineTable)
+		sqlStatement := fmt.Sprintf("INSERT INTO %s (project, id, sha, ref, status, web_url, openshift_pid, kibana_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"+
+			"ON CONFLICT (id) DO UPDATE SET status = $5, openshift_pid = $7, kibana_url = $8 RETURNING id;", pipelineTable)
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
 			project,
@@ -41,6 +47,7 @@ func openshiftCommit(token, project, branch, pipelineTable, jobTable string) {
 			pipelineDetail.Status,
 			pipelineDetail.WebURL,
 			pipelineDetail.ID,
+			logURL,
 		).Scan(&id)
 		if err != nil {
 			glog.Error(err)
@@ -122,4 +129,65 @@ func getTriggredPipelineDetail(id, token string) (PlatformPipeline, error) {
 	var obj commitPipeline
 	json.Unmarshal(body, &obj)
 	return obj.LastPipeline, nil
+}
+
+// QueryOpenshiftReleaseData fetch the pipeline data as well as jobs data form Openshift table of database
+func QueryOpenshiftReleaseData(datas *Builddashboard, pipelineTableName string, jobTableName string) error {
+	pipelineQuery := fmt.Sprintf("SELECT * FROM %s ORDER BY id DESC;", pipelineTableName)
+	pipelinerows, err := database.Db.Query(pipelineQuery)
+	if err != nil {
+		return err
+	}
+	defer pipelinerows.Close()
+	for pipelinerows.Next() {
+		pipelinedata := BuildpipelineSummary{}
+		err = pipelinerows.Scan(
+			&pipelinedata.Project,
+			&pipelinedata.ID,
+			&pipelinedata.Sha,
+			&pipelinedata.Ref,
+			&pipelinedata.Status,
+			&pipelinedata.WebURL,
+			&pipelinedata.OpenshiftPID,
+			&pipelinedata.LogURL,
+		)
+		if err != nil {
+			return err
+		}
+
+		jobsquery := fmt.Sprintf("SELECT * FROM %s WHERE pipelineid = $1 ORDER BY id;", jobTableName)
+		jobsrows, err := database.Db.Query(jobsquery, pipelinedata.ID)
+		if err != nil {
+			return err
+		}
+		defer jobsrows.Close()
+		jobsdataarray := []BuildJobssummary{}
+		for jobsrows.Next() {
+			jobsdata := BuildJobssummary{}
+			err = jobsrows.Scan(
+				&jobsdata.PipelineID,
+				&jobsdata.ID,
+				&jobsdata.Status,
+				&jobsdata.Stage,
+				&jobsdata.Name,
+				&jobsdata.Ref,
+				&jobsdata.CreatedAt,
+				&jobsdata.StartedAt,
+				&jobsdata.FinishedAt,
+				&jobsdata.Message,
+				&jobsdata.AuthorName,
+			)
+			if err != nil {
+				return err
+			}
+			jobsdataarray = append(jobsdataarray, jobsdata)
+			pipelinedata.Jobs = jobsdataarray
+		}
+		datas.Dashboard = append(datas.Dashboard, pipelinedata)
+	}
+	err = pipelinerows.Err()
+	if err != nil {
+		return err
+	}
+	return nil
 }
