@@ -111,7 +111,7 @@ func openshiftCommit(token, project, branch, pipelineTable, jobTable string) {
 
 // getcommitData will fetch the commit data from gitlab API
 func getcommitData(token, branch string) (commit, error) {
-	URL := BaseURL + "api/v4/projects/" + OPENSHIFTID + "/repository/commits?per_page=50&&ref_name=" + branch
+	URL := BaseURL + "api/v4/projects/" + OPENSHIFTID + "/repository/commits?per_page=30&&ref_name=" + branch
 	req, err := http.NewRequest("GET", URL, nil)
 	if err != nil {
 		return nil, err
