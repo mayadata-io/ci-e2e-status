@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os/exec"
+	"strings"
 
 	"github.com/golang/glog"
 	"github.com/mayadata-io/ci-e2e-status/database"
@@ -35,24 +37,51 @@ func openshiftCommit(token, project, branch, pipelineTable, jobTable string) {
 			JobFinishedAt := pipelineJobsData[len(pipelineJobsData)-1].FinishedAt
 			logURL = Kibanaloglink(pipelineDetail.Sha, pipelineDetail.ID, pipelineDetail.Status, jobStartedAt, JobFinishedAt)
 		}
-		// Add pipelines data to Database
-		sqlStatement := fmt.Sprintf("INSERT INTO %s (project, id, sha, ref, status, web_url, openshift_pid, kibana_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"+
-			"ON CONFLICT (id) DO UPDATE SET status = $5, openshift_pid = $7, kibana_url = $8 RETURNING id;", pipelineTable)
-		id := 0
-		err = database.Db.QueryRow(sqlStatement,
-			project,
-			pipelineDetail.ID,
-			pipelineDetail.Sha,
-			pipelineDetail.Ref,
-			pipelineDetail.Status,
-			pipelineDetail.WebURL,
-			pipelineDetail.ID,
-			logURL,
-		).Scan(&id)
-		if err != nil {
-			glog.Error(err)
+		if branch == "release-branch" {
+			var releaseTag = ""
+			releaseTag, err = getReleaseTag(pipelineJobsData, token)
+			if err != nil {
+				glog.Error(err)
+			}
+			// Add pipelines data to Database
+			sqlStatement := fmt.Sprintf("INSERT INTO %s (project, id, sha, ref, status, web_url, openshift_pid, kibana_url, release_tag) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"+
+				"ON CONFLICT (id) DO UPDATE SET status = $5, openshift_pid = $7, kibana_url = $8, release_tag = $9 RETURNING id;", pipelineTable)
+			id := 0
+			err = database.Db.QueryRow(sqlStatement,
+				project,
+				pipelineDetail.ID,
+				pipelineDetail.Sha,
+				pipelineDetail.Ref,
+				pipelineDetail.Status,
+				pipelineDetail.WebURL,
+				pipelineDetail.ID,
+				logURL,
+				releaseTag,
+			).Scan(&id)
+			if err != nil {
+				glog.Error(err)
+			}
+			glog.Infof("New record ID for %s Pipeline: %d", project, id)
+		} else {
+			// Add pipelines data to Database
+			sqlStatement := fmt.Sprintf("INSERT INTO %s (project, id, sha, ref, status, web_url, openshift_pid, kibana_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"+
+				"ON CONFLICT (id) DO UPDATE SET status = $5, openshift_pid = $7, kibana_url = $8 RETURNING id;", pipelineTable)
+			id := 0
+			err = database.Db.QueryRow(sqlStatement,
+				project,
+				pipelineDetail.ID,
+				pipelineDetail.Sha,
+				pipelineDetail.Ref,
+				pipelineDetail.Status,
+				pipelineDetail.WebURL,
+				pipelineDetail.ID,
+				logURL,
+			).Scan(&id)
+			if err != nil {
+				glog.Error(err)
+			}
+			glog.Infof("New record ID for %s Pipeline: %d", project, id)
 		}
-		glog.Infof("New record ID for %s Pipeline: %d", project, id)
 
 		// Add pipeline jobs data to Database
 		for j := range pipelineJobsData {
@@ -131,9 +160,52 @@ func getTriggredPipelineDetail(id, token string) (PlatformPipeline, error) {
 	return obj.LastPipeline, nil
 }
 
-// QueryOpenshiftReleaseData fetch the pipeline data as well as jobs data form Openshift table of database
-func QueryOpenshiftReleaseData(datas *Builddashboard, pipelineTableName string, jobTableName string) error {
-	pipelineQuery := fmt.Sprintf("SELECT * FROM %s ORDER BY id DESC;", pipelineTableName)
+func getReleaseTag(jobsData Jobs, token string) (string, error) {
+	var jobURL string
+	for _, value := range jobsData {
+		if value.Name == "K9YC-OpenEBS" {
+			jobURL = value.WebURL
+		}
+	}
+	url := jobURL + "/raw"
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "NA", err
+	}
+	req.Close = true
+	req.Header.Set("Connection", "close")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "NA", err
+	}
+	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
+	data := string(body)
+	if data == "" {
+		return "NA", err
+	}
+	grep := exec.Command("grep", "-oP", "(?<=openebs/m-apiserver)[^ ]*")
+	ps := exec.Command("echo", data)
+
+	// Get ps's stdout and attach it to grep's stdin.
+	pipe, _ := ps.StdoutPipe()
+	defer pipe.Close()
+	grep.Stdin = pipe
+	ps.Start()
+
+	// Run and get the output of grep.
+	value, _ := grep.Output()
+	result := strings.Split(string(value), "\n")
+	result = strings.Split(result[1], ":")
+	if result[1] == "" {
+		return "NA", nil
+	}
+	return result[1], nil
+}
+
+// QueryReleasePipelineData fetches the builddashboard data from the db
+func QueryReleasePipelineData(datas *Builddashboard, pipelineTable string, jobsTable string) error {
+	pipelineQuery := fmt.Sprintf("SELECT * FROM %s ORDER BY id DESC;", pipelineTable)
 	pipelinerows, err := database.Db.Query(pipelineQuery)
 	if err != nil {
 		return err
@@ -150,12 +222,13 @@ func QueryOpenshiftReleaseData(datas *Builddashboard, pipelineTableName string, 
 			&pipelinedata.WebURL,
 			&pipelinedata.OpenshiftPID,
 			&pipelinedata.LogURL,
+			&pipelinedata.ReleaseTag,
 		)
 		if err != nil {
 			return err
 		}
 
-		jobsquery := fmt.Sprintf("SELECT * FROM %s WHERE pipelineid = $1 ORDER BY id;", jobTableName)
+		jobsquery := fmt.Sprintf("SELECT * FROM %s WHERE pipelineid = $1 ORDER BY id;", jobsTable)
 		jobsrows, err := database.Db.Query(jobsquery, pipelinedata.ID)
 		if err != nil {
 			return err

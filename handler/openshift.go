@@ -31,7 +31,7 @@ func OpenshiftHandlerMaster(w http.ResponseWriter, r *http.Request) {
 
 // OpenshiftData from gitlab api for Openshift and dump to database
 func OpenshiftData(token, triggredIDColumnName, pipelineTableName, jobTableName string) {
-	query := fmt.Sprintf("SELECT id,%s FROM build_pipeline ORDER BY id DESC FETCH FIRST 20 ROWS ONLY;", triggredIDColumnName)
+	query := fmt.Sprintf("SELECT id,%s FROM build_pipeline ORDER BY id DESC;", triggredIDColumnName)
 	openshiftPipelineID, err := database.Db.Query(query)
 	if err != nil {
 		glog.Error("OPENSHIFT pipeline quering data Error:", err)
