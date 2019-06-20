@@ -57,6 +57,7 @@ type Jobs []struct {
 	CreatedAt  string `json:"created_at"`
 	StartedAt  string `json:"started_at"`
 	FinishedAt string `json:"finished_at"`
+	WebURL     string `json:"web_url"`
 	Commit     struct {
 		Message    string `json:"message"`
 		AuthorName string `json:"author_name"`
@@ -143,6 +144,7 @@ type BuildpipelineSummary struct {
 	WebURL       string             `json:"web_url"`
 	OpenshiftPID string             `json:"openshift_pid"`
 	LogURL       string             `json:"kibana_url" `
+	ReleaseTag   string             `json:"release_tag"`
 	Jobs         []BuildJobssummary `json:"jobs"`
 }
 

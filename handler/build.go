@@ -105,10 +105,10 @@ func BuildData(token, project string) {
 			glog.Infof("New record ID for %s pipeline Jobs: %d", project, id)
 		}
 	}
-	err = modifyBuildData()
-	if err != nil {
-		glog.Error(err)
-	}
+	// err = modifyBuildData()
+	// if err != nil {
+	// 	glog.Error(err)
+	// }
 }
 
 func modifyBuildData() error {
