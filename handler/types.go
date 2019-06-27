@@ -15,7 +15,7 @@ const (
 	MAYABRANCH  = "master"
 	JIVABRANCH  = "master"
 	ISTGTBRANCH = "replication"
-	ZFSBRANCH   = "zfs-0.7-release"
+	ZFSBRANCH   = "develop"
 )
 
 var project string
