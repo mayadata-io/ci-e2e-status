@@ -196,11 +196,14 @@ func getReleaseTag(jobsData Jobs, token string) (string, error) {
 	// Run and get the output of grep.
 	value, _ := grep.Output()
 	result := strings.Split(string(value), "\n")
-	result = strings.Split(result[1], ":")
-	if result[1] == "" {
-		return "NA", nil
+	if result != nil {
+		if result[1] == "" {
+			return "NA", nil
+		}
+		result = strings.Split(result[1], ":")
+		return result[1], nil
 	}
-	return result[1], nil
+	return "NA", nil
 }
 
 // QueryReleasePipelineData fetches the builddashboard data from the db
