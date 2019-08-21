@@ -415,6 +415,7 @@ func queryBuildData(datas *Builddashboard) error {
 			&pipelinedata.PacketV11PID,
 			&pipelinedata.PacketV12PID,
 			&pipelinedata.PacketV13PID,
+			&pipelinedata.KonvoyPID,
 		)
 		if err != nil {
 			return err
