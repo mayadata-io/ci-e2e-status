@@ -157,7 +157,7 @@ func BuildData(token string) {
 		// Add maya pipelines data to Database
 		sqlStatement := `
 			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid, konvoy_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 			ON CONFLICT (id) DO UPDATE
 			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9, konvoy_pid = $10
 			RETURNING id`
@@ -244,7 +244,7 @@ func BuildData(token string) {
 		// Add zfs pipelines data to Database
 		sqlStatement := `
 			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid, konvoy_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 			ON CONFLICT (id) DO UPDATE
 			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9, konvoy_pid = $10
 			RETURNING id`
@@ -331,7 +331,7 @@ func BuildData(token string) {
 		// Add istgt pipelines data to Database
 		sqlStatement := `
 			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid, konvoy_pid)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 			ON CONFLICT (id) DO UPDATE
 			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9, konvoy_pid = $10
 			RETURNING id`
