@@ -3,6 +3,7 @@ package handler
 // PlatformID assignment from gitlab repository
 const (
 	PACKETID = "27"
+	KONVOYID = "34"
 	MAYAID   = "7"
 	JIVAID   = "6"
 	ISTGTID  = "5"
