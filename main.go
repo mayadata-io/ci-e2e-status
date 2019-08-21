@@ -20,6 +20,7 @@ func main() {
 	http.HandleFunc("/packet/v12", handler.PacketHandlerV12)
 	http.HandleFunc("/packet/v13", handler.PacketHandlerV13)
 	http.HandleFunc("/build", handler.Buildhandler)
+	http.HandleFunc("/konvoy", handler.KonvoyHandler)
 	glog.Infof("Listening on http://0.0.0.0:3000")
 
 	// Trigger db update function

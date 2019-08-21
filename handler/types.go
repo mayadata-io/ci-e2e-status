@@ -3,6 +3,7 @@ package handler
 // PlatformID assignment from gitlab repository
 const (
 	PACKETID = "27"
+	KONVOYID = "34"
 	MAYAID   = "7"
 	JIVAID   = "6"
 	ISTGTID  = "5"
@@ -137,6 +138,7 @@ type BuildpipelineSummary struct {
 	PacketV11PID string             `json:"packet_v11_pid"`
 	PacketV12PID string             `json:"packet_v12_pid"`
 	PacketV13PID string             `json:"packet_v13_pid"`
+	KonvoyPID    string             `json:"konvoy_pid"`
 	Jobs         []BuildJobssummary `json:"jobs"`
 }
 

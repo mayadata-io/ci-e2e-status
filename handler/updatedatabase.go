@@ -24,6 +24,7 @@ func UpdateDatabase() {
 		jobTable := "packet_jobs_" + k8sVersion
 		PacketData(token, columnName, pipelineTable, jobTable)
 	}
+	KonvoyData(token, "konvoy_pid", "konvoy_pipeline", "konvoy_jobs")
 	// loop will iterate at every 2nd minute and update the database
 	tick := time.Tick(2 * time.Minute)
 	for range tick {
@@ -34,5 +35,7 @@ func UpdateDatabase() {
 			jobTable := "packet_jobs_" + k8sVersion
 			PacketData(token, columnName, pipelineTable, jobTable)
 		}
+		KonvoyData(token, "konvoy_pid", "konvoy_pipeline", "konvoy_jobs")
+
 	}
 }
