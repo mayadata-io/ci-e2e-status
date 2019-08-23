@@ -70,7 +70,7 @@ type Jobssummary struct {
 	CreatedAt  string `json:"created_at"`
 	StartedAt  string `json:"started_at"`
 	FinishedAt string `json:"finished_at"`
-	JobLogURL  string `json:"job_kibana_url"`
+	JobLogURL  string `json:"job_log_url"`
 }
 
 // TriggredID contains the details of a gitlab pipelines
