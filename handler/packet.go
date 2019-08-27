@@ -116,9 +116,13 @@ func PacketData(token, triggredIDColumnName, pipelineTableName, jobTableName str
 		glog.Infoln("New record ID for PACKET Pipeline:", id)
 		if pipelinedata.ID != 0 {
 			for j := range pipelineJobsdata {
-				sqlStatement := fmt.Sprintf("INSERT INTO %s (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"+
-					"ON CONFLICT (id) DO UPDATE SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9 RETURNING id;", jobTableName)
+				var jobLogURL string
+				sqlStatement := fmt.Sprintf("INSERT INTO %s (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, job_log_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"+
+					"ON CONFLICT (id) DO UPDATE SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9, job_log_url = $10 RETURNING id;", jobTableName)
 				id := 0
+				if len(pipelineJobsdata) != 0 {
+					jobLogURL = Kibanaloglink(packetPipelineData.Sha, packetPipelineData.ID, packetPipelineData.Status, pipelineJobsdata[j].StartedAt, pipelineJobsdata[j].FinishedAt)
+				}
 				err = database.Db.QueryRow(sqlStatement,
 					packetPipelineData.ID,
 					pipelineJobsdata[j].ID,
@@ -129,6 +133,7 @@ func PacketData(token, triggredIDColumnName, pipelineTableName, jobTableName str
 					pipelineJobsdata[j].CreatedAt,
 					pipelineJobsdata[j].StartedAt,
 					pipelineJobsdata[j].FinishedAt,
+					jobLogURL,
 				).Scan(&id)
 				if err != nil {
 					glog.Error(err)
@@ -245,6 +250,7 @@ func QueryPacketData(datas *dashboard, pipelineTableName string, jobTableName st
 				&jobsdata.CreatedAt,
 				&jobsdata.StartedAt,
 				&jobsdata.FinishedAt,
+				&jobsdata.JobLogURL,
 			)
 			if err != nil {
 				return err
