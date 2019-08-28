@@ -7,7 +7,7 @@ const (
 	JIVAID      = "6"
 	ISTGTID     = "5"
 	ZFSID       = "8"
-	OPENSHIFTID = "15"
+	OPENSHIFTID = "36"
 )
 
 // BranchName assignment from gitlab repository
