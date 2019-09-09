@@ -20,9 +20,9 @@ func UpdateDatabase() {
 	for _, t := range triggerType {
 		// Fetch the e2e-openshift commit based pipeline
 		if t == "master" {
-			go openshiftCommit(token, "e2e-openshift", "OpenEBS-base", "build_pipeline", "build_jobs")
+			// go openshiftCommit(token, "e2e-openshift", "OpenEBS-base", "build_pipeline", "build_jobs")
 		} else {
-			go openshiftCommit(token, "e2e-openshift", "release-branch", "release_pipeline_data", "release_jobs_data")
+			releaseBranch(token, "e2e-openshift", "release-branch", "release_pipeline_data", "release_jobs_data")
 		}
 	}
 	// Update the database, This wil run only first time
@@ -37,9 +37,9 @@ func UpdateDatabase() {
 		for _, t := range triggerType {
 			// Fetch the e2e-openshift commit based pipeline
 			if t == "master" {
-				go openshiftCommit(token, "e2e-openshift", "OpenEBS-base", "build_pipeline", "build_jobs")
+				// go openshiftCommit(token, "e2e-openshift", "OpenEBS-base", "build_pipeline", "build_jobs")
 			} else {
-				go openshiftCommit(token, "e2e-openshift", "release-branch", "release_pipeline_data", "release_jobs_data")
+				go releaseBranch(token, "e2e-openshift", "release-branch", "release_pipeline_data", "release_jobs_data")
 			}
 		}
 		// Fetch the pipeline detail of specified projects

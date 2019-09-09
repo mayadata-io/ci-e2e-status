@@ -168,6 +168,7 @@ func getReleaseTag(jobsData Jobs, token string) (string, error) {
 		}
 	}
 	url := jobURL + "/raw"
+	glog.Infoln("url----->", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return "NA", err
@@ -195,6 +196,7 @@ func getReleaseTag(jobsData Jobs, token string) (string, error) {
 
 	// Run and get the output of grep.
 	value, _ := grep.Output()
+	glog.Infoln("data----->", value)
 	result := strings.Split(string(value), "\n")
 	glog.Infoln("result ----------->", result, len(result)) // Used for debug
 	if result != nil && len(result) > 1 {
