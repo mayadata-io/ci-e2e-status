@@ -196,14 +196,14 @@ func getReleaseTag(jobsData Jobs, token string) (string, error) {
 
 	// Run and get the output of grep.
 	value, _ := grep.Output()
-	glog.Infoln("data----->", value)
 	result := strings.Split(string(value), "\n")
-	glog.Infoln("result ----------->", result, len(result)) // Used for debug
+	glog.Infoln("result----->", result)
 	if result != nil && len(result) > 1 {
 		if result[1] == "" {
 			return "NA", nil
 		}
 		result = strings.Split(result[1], ":")
+		glog.Infoln("data----->", result[1])
 		return result[1], nil
 	}
 	return "NA", nil
