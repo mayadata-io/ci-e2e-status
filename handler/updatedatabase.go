@@ -46,7 +46,7 @@ func UpdateDatabase() {
 		for _, project := range projects {
 			BuildData(token, project)
 		}
-		// // Fetch openshift pipeline
+		// Fetch openshift pipeline
 		OpenshiftData(token, "openshift_pid", "openshift_pipeline", "openshift_jobs")
 	}
 }

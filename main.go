@@ -9,7 +9,6 @@ import (
 	"github.com/mayadata-io/ci-e2e-status/database"
 	"github.com/mayadata-io/ci-e2e-status/handler"
 	"github.com/mayadata-io/ci-e2e-status/router"
-
 )
 
 func main() {
