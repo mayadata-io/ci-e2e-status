@@ -203,7 +203,6 @@ func getReleaseTag(jobsData Jobs, token string) (string, error) {
 			return "NA", nil
 		}
 		result = strings.Split(result[1], ":")
-		glog.Infoln("data----->", result[1])
 		return result[1], nil
 	}
 	return "NA", nil
