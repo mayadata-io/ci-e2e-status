@@ -11,12 +11,12 @@ import (
 	"github.com/mayadata-io/ci-e2e-status/database"
 )
 
-// PacketHandlerV11 return packet pipeline data to /packet path
-func PacketHandlerV11(w http.ResponseWriter, r *http.Request) {
+// PacketHandlerV15 return packet pipeline data to /packet path
+func PacketHandlerV15(w http.ResponseWriter, r *http.Request) {
 	// Allow cross origin request
 	(w).Header().Set("Access-Control-Allow-Origin", "*")
 	datas := dashboard{}
-	err := QueryPacketData(&datas, "packet_pipeline_v11", "packet_jobs_v11")
+	err := QueryPacketData(&datas, "packet_pipeline_v15", "packet_jobs_v15")
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		glog.Error(err)
@@ -29,13 +29,13 @@ func PacketHandlerV11(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
-// PacketHandlerV12 return packet pipeline data to /packet path
+// PacketHandlerV14 return packet pipeline data to /packet path
 // TODO
-func PacketHandlerV12(w http.ResponseWriter, r *http.Request) {
+func PacketHandlerV14(w http.ResponseWriter, r *http.Request) {
 	// Allow cross origin request
 	(w).Header().Set("Access-Control-Allow-Origin", "*")
 	datas := dashboard{}
-	err := QueryPacketData(&datas, "packet_pipeline_v12", "packet_jobs_v12")
+	err := QueryPacketData(&datas, "packet_pipeline_v14", "packet_jobs_v14")
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		glog.Error(err)

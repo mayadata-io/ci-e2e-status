@@ -136,8 +136,8 @@ type BuildpipelineSummary struct {
 	Ref          string             `json:"ref"`
 	Status       string             `json:"status"`
 	WebURL       string             `json:"web_url"`
-	PacketV11PID string             `json:"packet_v11_pid"`
-	PacketV12PID string             `json:"packet_v12_pid"`
+	PacketV15PID string             `json:"packet_v15_pid"`
+	PacketV14PID string             `json:"packet_v14_pid"`
 	PacketV13PID string             `json:"packet_v13_pid"`
 	KonvoyPID    string             `json:"konvoy_pid"`
 	Jobs         []BuildJobssummary `json:"jobs"`
