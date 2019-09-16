@@ -16,8 +16,8 @@ func main() {
 	// Initailze Db connection
 	database.InitDb()
 	// Return value to all / api path
-	http.HandleFunc("/packet/v11", handler.PacketHandlerV11)
-	http.HandleFunc("/packet/v12", handler.PacketHandlerV12)
+	http.HandleFunc("/packet/v15", handler.PacketHandlerV15)
+	http.HandleFunc("/packet/v14", handler.PacketHandlerV14)
 	http.HandleFunc("/packet/v13", handler.PacketHandlerV13)
 	http.HandleFunc("/build", handler.Buildhandler)
 	http.HandleFunc("/konvoy", handler.KonvoyHandler)

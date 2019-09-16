@@ -17,7 +17,7 @@ func UpdateDatabase() {
 	}
 	// Update the database, This wil run only first time
 	BuildData(token)
-	k8sVersion := []string{"v11", "v12", "v13"}
+	k8sVersion := []string{"v15", "v14", "v13"}
 	for _, k8sVersion := range k8sVersion {
 		columnName := "packet_" + k8sVersion + "_pid"
 		pipelineTable := "packet_pipeline_" + k8sVersion

@@ -47,8 +47,8 @@ func InitDb() {
 // createTable in database if not abvailable
 func createTable() {
 	// Create platform, pipeline and job table
-	pipeline := []string{"packet_pipeline_v11", "packet_pipeline_v12", "packet_pipeline_v13", "konvoy_pipeline"}
-	pipelineJobs := []string{"packet_jobs_v11", "packet_jobs_v12", "packet_jobs_v13", "konvoy_jobs"}
+	pipeline := []string{"packet_pipeline_v15", "packet_pipeline_v14", "packet_pipeline_v13", "konvoy_pipeline"}
+	pipelineJobs := []string{"packet_jobs_v15", "packet_jobs_v14", "packet_jobs_v13", "konvoy_jobs"}
 	// Create pipeline table in database
 	for i := range pipeline {
 		query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(build_pipelineid INT PRIMARY KEY, id INT, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, kibana_url VARCHAR);", pipeline[i])
@@ -68,7 +68,7 @@ func createTable() {
 		defer value.Close()
 	}
 	// create build pipelines table for build related r/w operation
-	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS build_pipeline(project VARCHAR, id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, packet_v11_pid VARCHAR, packet_v12_pid VARCHAR, packet_v13_pid VARCHAR, konvoy_pid VARCHAR);")
+	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS build_pipeline(project VARCHAR, id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, packet_v15_pid VARCHAR, packet_v14_pid VARCHAR, packet_v13_pid VARCHAR, konvoy_pid VARCHAR);")
 	value, err := Db.Query(query)
 	if err != nil {
 		glog.Error(err)

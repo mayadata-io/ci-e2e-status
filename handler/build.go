@@ -49,12 +49,12 @@ func BuildData(token string) {
 		// Getting webURL link for getting triggredID
 		baselineJobsWebURL := getBaselineJobWebURL(jivaJobsData)
 		// Get GKE, Triggred pipeline ID for jiva build
-		packetV11PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-11")
+		packetV15PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-15")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get EKS, Triggred pipeline ID for jiva build
-		packetV12PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-12")
+		packetV14PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-14")
 		if err != nil {
 			glog.Error(err)
 		}
@@ -69,10 +69,10 @@ func BuildData(token string) {
 		}
 		// Add jiva pipelines data to Database
 		sqlStatement := `
-			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid, konvoy_pid)
+			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v15_pid, packet_v14_pid, packet_v13_pid, konvoy_pid)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 			ON CONFLICT (id) DO UPDATE
-			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9, konvoy_pid = $10
+			SET status = $5, packet_v15_pid = $7, packet_v14_pid = $8, packet_v13_pid = $9, konvoy_pid = $10
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
@@ -82,8 +82,8 @@ func BuildData(token string) {
 			jivaPipelineData[i].Ref,
 			jivaPipelineData[i].Status,
 			jivaPipelineData[i].WebURL,
-			packetV11PID,
-			packetV12PID,
+			packetV15PID,
+			packetV14PID,
 			packetV13PID,
 			konvoyPID,
 		).Scan(&id)
@@ -136,12 +136,12 @@ func BuildData(token string) {
 		// Getting webURL link for getting triggredID
 		baselineJobsWebURL := getBaselineJobWebURL(mayaJobsData)
 		// Get GKE, Triggred pipeline ID for maya build
-		packetV11PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-11")
+		packetV15PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-15")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get EKS, Triggred pipeline ID for maya build
-		packetV12PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-12")
+		packetV14PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-14")
 		if err != nil {
 			glog.Error(err)
 		}
@@ -156,10 +156,10 @@ func BuildData(token string) {
 		}
 		// Add maya pipelines data to Database
 		sqlStatement := `
-			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid, konvoy_pid)
+			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v15_pid, packet_v14_pid, packet_v13_pid, konvoy_pid)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 			ON CONFLICT (id) DO UPDATE
-			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9, konvoy_pid = $10
+			SET status = $5, packet_v15_pid = $7, packet_v14_pid = $8, packet_v13_pid = $9, konvoy_pid = $10
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
@@ -169,8 +169,8 @@ func BuildData(token string) {
 			mayaPipelineData[i].Ref,
 			mayaPipelineData[i].Status,
 			mayaPipelineData[i].WebURL,
-			packetV11PID,
-			packetV12PID,
+			packetV15PID,
+			packetV14PID,
 			packetV13PID,
 			konvoyPID,
 		).Scan(&id)
@@ -223,12 +223,12 @@ func BuildData(token string) {
 		// Getting webURL link for getting triggredID
 		baselineJobsWebURL := getBaselineJobWebURL(zfsJobsData)
 		// Get GKE, Triggred pipeline ID for zfs build
-		packetV11PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-11")
+		packetV15PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-15")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get EKS, Triggred pipeline ID for zfs build
-		packetV12PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-12")
+		packetV14PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-14")
 		if err != nil {
 			glog.Error(err)
 		}
@@ -243,10 +243,10 @@ func BuildData(token string) {
 		}
 		// Add zfs pipelines data to Database
 		sqlStatement := `
-			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid, konvoy_pid)
+			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v15_pid, packet_v14_pid, packet_v13_pid, konvoy_pid)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 			ON CONFLICT (id) DO UPDATE
-			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9, konvoy_pid = $10
+			SET status = $5, packet_v15_pid = $7, packet_v14_pid = $8, packet_v13_pid = $9, konvoy_pid = $10
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
@@ -256,8 +256,8 @@ func BuildData(token string) {
 			zfsPipelineData[i].Ref,
 			zfsPipelineData[i].Status,
 			zfsPipelineData[i].WebURL,
-			packetV11PID,
-			packetV12PID,
+			packetV15PID,
+			packetV14PID,
 			packetV13PID,
 			konvoyPID,
 		).Scan(&id)
@@ -310,12 +310,12 @@ func BuildData(token string) {
 		// Getting webURL link for getting triggredID
 		baselineJobsWebURL := getBaselineJobWebURL(istgtJobsData)
 		// Get GKE, Triggred pipeline ID for istgt build
-		packetV11PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-11")
+		packetV15PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-15")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get EKS, Triggred pipeline ID for istgt build
-		packetV12PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-12")
+		packetV14PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-14")
 		if err != nil {
 			glog.Error(err)
 		}
@@ -330,10 +330,10 @@ func BuildData(token string) {
 		}
 		// Add istgt pipelines data to Database
 		sqlStatement := `
-			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v11_pid, packet_v12_pid, packet_v13_pid, konvoy_pid)
+			INSERT INTO build_pipeline (project, id, sha, ref, status, web_url, packet_v15_pid, packet_v14_pid, packet_v13_pid, konvoy_pid)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 			ON CONFLICT (id) DO UPDATE
-			SET status = $5, packet_v11_pid = $7, packet_v12_pid = $8, packet_v13_pid = $9, konvoy_pid = $10
+			SET status = $5, packet_v15_pid = $7, packet_v14_pid = $8, packet_v13_pid = $9, konvoy_pid = $10
 			RETURNING id`
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
@@ -343,8 +343,8 @@ func BuildData(token string) {
 			istgtPipelineData[i].Ref,
 			istgtPipelineData[i].Status,
 			istgtPipelineData[i].WebURL,
-			packetV11PID,
-			packetV12PID,
+			packetV15PID,
+			packetV14PID,
 			packetV13PID,
 			konvoyPID,
 		).Scan(&id)
@@ -412,8 +412,8 @@ func queryBuildData(datas *Builddashboard) error {
 			&pipelinedata.Ref,
 			&pipelinedata.Status,
 			&pipelinedata.WebURL,
-			&pipelinedata.PacketV11PID,
-			&pipelinedata.PacketV12PID,
+			&pipelinedata.PacketV15PID,
+			&pipelinedata.PacketV14PID,
 			&pipelinedata.PacketV13PID,
 			&pipelinedata.KonvoyPID,
 		)
