@@ -150,7 +150,7 @@ func BuildData(token string) {
 		if err != nil {
 			glog.Error(err)
 		}
-		konvoyPID, err := getTriggerPipelineid(baselineJobsWebURL, "Openebs-base")
+		konvoyPID, err := getTriggerPipelineid(baselineJobsWebURL, "konvoy-onprem")
 		if err != nil {
 			glog.Error(err)
 		}
