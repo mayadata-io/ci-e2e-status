@@ -183,7 +183,7 @@ func packetPipelineJobs(pipelineID int, token string) (Jobs, error) {
 	if pipelineID == 0 {
 		return nil, nil
 	}
-	url := BaseURL + "api/v4/projects/" + PACKETID + "/pipelines/" + strconv.Itoa(pipelineID) + "/jobs?per_page=50"
+	url := BaseURL + "api/v4/projects/" + PACKETID + "/pipelines/" + strconv.Itoa(pipelineID) + "/jobs?per_page=100"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
