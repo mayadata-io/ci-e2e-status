@@ -8,15 +8,15 @@ import (
 	"strconv"
 
 	"github.com/golang/glog"
-	"github.com/mayadata-io/ci-e2e-status/database"
+	"github.com/mayadata-io/OEP/database"
 )
 
-// KonvoyHandler return packet pipeline data to /packet path
-func KonvoyHandler(w http.ResponseWriter, r *http.Request) {
+// PipelineHandler return packet pipeline data to /packet path
+func PipelineHandler(w http.ResponseWriter, r *http.Request) {
 	// Allow cross origin request
 	(w).Header().Set("Access-Control-Allow-Origin", "*")
 	datas := dashboard{}
-	err := QueryKonvoyData(&datas, "konvoy_pipeline", "konvoy_jobs")
+	err := QueryPipelineData(&datas)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		glog.Error(err)
@@ -29,10 +29,10 @@ func KonvoyHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
-// QueryKonvoyData fetch the pipeline data as well as jobs data form Packet table of database
-func QueryKonvoyData(datas *dashboard, pipelineTableName string, jobTableName string) error {
+// QueryPipelineData fetch the pipeline data as well as jobs data form Packet table of database
+func QueryPipelineData(datas *dashboard) error {
 	// Select all data from packetpipeline table of DB
-	query := fmt.Sprintf("SELECT id,sha,ref,status,web_url,kibana_url FROM %s ORDER BY build_pipelineid DESC;", pipelineTableName)
+	query := fmt.Sprintf("SELECT pipelineid,projectid,sha,ref,status,web_url,kibana_url FROM oep_pipelines ORDER BY pipelineid DESC;")
 	pipelinerows, err := database.Db.Query(query)
 	if err != nil {
 		return err
@@ -43,7 +43,8 @@ func QueryKonvoyData(datas *dashboard, pipelineTableName string, jobTableName st
 	for pipelinerows.Next() {
 		pipelinedata := pipelineSummary{}
 		err = pipelinerows.Scan(
-			&pipelinedata.ID,
+			&pipelinedata.PipelineID,
+			&pipelinedata.ProjectID,
 			&pipelinedata.Sha,
 			&pipelinedata.Ref,
 			&pipelinedata.Status,
@@ -54,8 +55,8 @@ func QueryKonvoyData(datas *dashboard, pipelineTableName string, jobTableName st
 			return err
 		}
 		// Query packetjobs data of respective pipeline using pipelineID from packetjobs table
-		jobsquery := fmt.Sprintf("SELECT * FROM %s WHERE pipelineid = $1 ORDER BY id;", jobTableName)
-		jobsrows, err := database.Db.Query(jobsquery, pipelinedata.ID)
+		jobsquery := fmt.Sprintf("SELECT * FROM oep_pipelines_jobs WHERE pipelineid = $1 ORDER BY id;")
+		jobsrows, err := database.Db.Query(jobsquery, pipelinedata.PipelineID)
 		if err != nil {
 			return err
 		}
@@ -95,28 +96,38 @@ func QueryKonvoyData(datas *dashboard, pipelineTableName string, jobTableName st
 	return nil
 }
 
-// KonvoyData from gitlab api for Konvoy and dump to database
-func KonvoyData(token, triggredIDColumnName, pipelineTableName, jobTableName string) {
-	query := fmt.Sprintf("SELECT id,%s FROM build_pipeline ORDER BY id DESC FETCH FIRST 20 ROWS ONLY;", triggredIDColumnName)
-	konvoyPipelineID, err := database.Db.Query(query)
+//
+
+//
+
+//
+//
+
+//
+
+//
+// oepData from gitlab api for oep and dump to database
+func pipelineData(token string) {
+	query := fmt.Sprintf("SELECT project,id FROM commit_detail ORDER BY id DESC FETCH FIRST 20 ROWS ONLY;")
+	oepPipelineID, err := database.Db.Query(query)
 	if err != nil {
-		glog.Error("KONVOY pipeline quering data Error:", err)
+		glog.Error("OEP pipeline quering data Error:", err)
 		return
 	}
-	for konvoyPipelineID.Next() {
+	for oepPipelineID.Next() {
 		var logURL string
 		pipelinedata := TriggredID{}
-		err = konvoyPipelineID.Scan(
-			&pipelinedata.BuildPID,
+		err = oepPipelineID.Scan(
+			&pipelinedata.ProjectID,
 			&pipelinedata.ID,
 		)
-		defer konvoyPipelineID.Close()
-		konvoyPipelineData, err := konvoyPipeline(token, pipelinedata.ID)
+		defer oepPipelineID.Close()
+		oepPipelineData, err := oepPipeline(token, pipelinedata.ID, pipelinedata.ProjectID)
 		if err != nil {
 			glog.Error(err)
 			return
 		}
-		pipelineJobsdata, err := konvoyPipelineJobs(konvoyPipelineData.ID, token)
+		pipelineJobsdata, err := oepPipelineJobs(oepPipelineData.ID, token, pipelinedata.ProjectID)
 		if err != nil {
 			glog.Error(err)
 			return
@@ -124,35 +135,36 @@ func KonvoyData(token, triggredIDColumnName, pipelineTableName, jobTableName str
 		if pipelinedata.ID != 0 && len(pipelineJobsdata) != 0 {
 			jobStartedAt := pipelineJobsdata[0].StartedAt
 			JobFinishedAt := pipelineJobsdata[len(pipelineJobsdata)-1].FinishedAt
-			logURL = Kibanaloglink(konvoyPipelineData.Sha, konvoyPipelineData.ID, konvoyPipelineData.Status, jobStartedAt, JobFinishedAt)
+			logURL = Kibanaloglink(oepPipelineData.Sha, oepPipelineData.ID, oepPipelineData.Status, jobStartedAt, JobFinishedAt)
 		}
-		sqlStatement := fmt.Sprintf("INSERT INTO %s (build_pipelineid, id, sha, ref, status, web_url, kibana_url) VALUES ($1, $2, $3, $4, $5, $6, $7)"+
-			"ON CONFLICT (build_pipelineid) DO UPDATE SET id = $2, sha = $3, ref = $4, status = $5, web_url = $6, kibana_url = $7 RETURNING id;", pipelineTableName)
-		id := 0
+		sqlStatement := fmt.Sprintf(`INSERT INTO oep_pipelines (projectid, pipelineid, sha, ref, status, web_url, kibana_url) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		 ON CONFLICT (pipelineid) DO UPDATE SET sha = $3, ref = $4, status = $5, web_url = $6, kibana_url = $7 RETURNING pipelineid;`)
+		pipelineid := 0
 		err = database.Db.QueryRow(sqlStatement,
-			pipelinedata.BuildPID,
-			konvoyPipelineData.ID,
-			konvoyPipelineData.Sha,
-			konvoyPipelineData.Ref,
-			konvoyPipelineData.Status,
-			konvoyPipelineData.WebURL,
+			pipelinedata.ProjectID,
+			oepPipelineData.ID,
+			oepPipelineData.Sha,
+			oepPipelineData.Ref,
+			oepPipelineData.Status,
+			oepPipelineData.WebURL,
 			logURL,
-		).Scan(&id)
+		).Scan(&pipelineid)
 		if err != nil {
 			glog.Error(err)
 		}
-		glog.Infoln("New record ID for KONVOY Pipeline:", id)
+		glog.Infoln("New record ID for OEP Pipeline:", oepPipelineData.ID)
 		if pipelinedata.ID != 0 {
 			for j := range pipelineJobsdata {
 				var jobLogURL string
-				sqlStatement := fmt.Sprintf("INSERT INTO %s (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, job_log_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"+
-					"ON CONFLICT (id) DO UPDATE SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9, job_log_url = $10 RETURNING id;", jobTableName)
+				sqlStatement := fmt.Sprintf("INSERT INTO oep_pipelines_jobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, job_log_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)" +
+					"ON CONFLICT (id) DO UPDATE SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9, job_log_url = $10 RETURNING id;")
 				id := 0
 				if len(pipelineJobsdata) != 0 {
-					jobLogURL = Kibanaloglink(konvoyPipelineData.Sha, konvoyPipelineData.ID, konvoyPipelineData.Status, pipelineJobsdata[j].StartedAt, pipelineJobsdata[j].FinishedAt)
+					jobLogURL = Kibanaloglink(oepPipelineData.Sha, oepPipelineData.ID, oepPipelineData.Status, pipelineJobsdata[j].StartedAt, pipelineJobsdata[j].FinishedAt)
 				}
 				err = database.Db.QueryRow(sqlStatement,
-					konvoyPipelineData.ID,
+					oepPipelineData.ID,
 					pipelineJobsdata[j].ID,
 					pipelineJobsdata[j].Status,
 					pipelineJobsdata[j].Stage,
@@ -166,14 +178,14 @@ func KonvoyData(token, triggredIDColumnName, pipelineTableName, jobTableName str
 				if err != nil {
 					glog.Error(err)
 				}
-				glog.Infoln("New record ID for KONVOY Jobs:", id)
+				glog.Infoln("New record ID for OEP Jobs:", id)
 			}
 		}
 	}
 }
 
-// konvoyPipeline will get data from gitlab api and store to DB
-func konvoyPipeline(token string, pipelineID int) (*PlatformPipeline, error) {
+// oepPipeline will get data from gitlab api and store to DB
+func oepPipeline(token string, pipelineID int, projectID int) (*PlatformPipeline, error) {
 	dummyJSON := []byte(`{"id":0,"sha":"00000000000000000000","ref":"none","status":"none","web_url":"none"}`)
 	if pipelineID == 0 {
 		var obj PlatformPipeline
@@ -181,7 +193,8 @@ func konvoyPipeline(token string, pipelineID int) (*PlatformPipeline, error) {
 		return &obj, nil
 	}
 	// Store packet pipeline data form gitlab api to packetObj
-	url := BaseURL + "api/v4/projects/" + KONVOYID + "/pipelines/" + strconv.Itoa(pipelineID)
+	url := BaseURL + "api/v4/projects/" + strconv.Itoa(projectID) + "/pipelines/" + strconv.Itoa(pipelineID)
+	glog.Infoln("pipelineURL", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -205,13 +218,13 @@ func konvoyPipeline(token string, pipelineID int) (*PlatformPipeline, error) {
 	return &obj, nil
 }
 
-// konvoyPipelineJobs will get pipeline jobs details from gitlab jobs api
-func konvoyPipelineJobs(pipelineID int, token string) (Jobs, error) {
-	// Generate pipeline jobs api url using BaseURL, pipelineID and KONVOYID
+// oepPipelineJobs will get pipeline jobs details from gitlab jobs api
+func oepPipelineJobs(pipelineID int, token string, projectID int) (Jobs, error) {
+	// Generate pipeline jobs api url using BaseURL, pipelineID and oepID
 	if pipelineID == 0 {
 		return nil, nil
 	}
-	url := BaseURL + "api/v4/projects/" + KONVOYID + "/pipelines/" + strconv.Itoa(pipelineID) + "/jobs?per_page=50"
+	url := BaseURL + "api/v4/projects/" + strconv.Itoa(projectID) + "/pipelines/" + strconv.Itoa(pipelineID) + "/jobs?per_page=50"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err

@@ -2,12 +2,13 @@ package handler
 
 // PlatformID assignment from gitlab repository
 const (
-	PACKETID = "27"
-	KONVOYID = "34"
+	mayaUI   = "6"
+	mayaIO   = "1"
 	MAYAID   = "7"
 	JIVAID   = "6"
 	ISTGTID  = "5"
 	ZFSID    = "8"
+	KONVOYID = "6"
 )
 
 // BranchName assignment from gitlab repository
@@ -26,7 +27,7 @@ const (
 )
 
 // BaseURL for gitlab
-var BaseURL = "https://gitlab.openebs.ci/"
+var BaseURL = "https://gitlab.mayadata.io/"
 
 // PlatformPipeline struct
 type PlatformPipeline struct {
@@ -45,6 +46,34 @@ type Pipeline []struct {
 	Status string `json:"status"`
 	WebURL string `json:"web_url"`
 	Jobs   Jobs   `json:"jobs"`
+}
+
+// Commit  dsdsdss
+type Commit []struct {
+	ID     string `json:"id"`
+	Sha    string `json:"short_id"`
+	Ref    string `json:"title"`
+	Status string `json:"message"`
+	WebURL string `json:"author_name"`
+}
+
+//CommitData wdsd
+type CommitData struct {
+	ProjectID      int    `json:"project_id"`
+	Sha            string `json:"id"`
+	CommittedDate  string `json:"committed_date"`
+	AuthorName     string `json:"author_name"`
+	AuthorEmail    string `json:"author_email"`
+	CommitterName  string `json:"committer_name"`
+	CommitterEmail string `json:"committer_email"`
+	CommitMessage  string `json:"message"`
+	CommitPipeline struct {
+		ID     int    `json:"id"`
+		Sha    string `json:"sha"`
+		Status string `json:"status"`
+		WebURL string `json:"web_url"`
+		Ref    string `json:"ref"`
+	} `json:"last_pipeline"`
 }
 
 // Jobs struct
@@ -75,19 +104,20 @@ type Jobssummary struct {
 
 // TriggredID contains the details of a gitlab pipelines
 type TriggredID struct {
-	ID       int `json:"id"`
-	BuildPID int `json:"gke_trigger_pid"`
+	ID        int `json:"id"`
+	ProjectID int `json:"project_id"`
 }
 
 // pipelineSummary contains the details of a gitlab pipelines
 type pipelineSummary struct {
-	ID     int           `json:"id"`
-	Sha    string        `json:"sha"`
-	Ref    string        `json:"ref"`
-	Status string        `json:"status"`
-	WebURL string        `json:"web_url"`
-	LogURL string        `json:"kibana_url"`
-	Jobs   []Jobssummary `json:"jobs"`
+	PipelineID int           `json:"pipelineid"`
+	ProjectID  int           `json:"projectid"`
+	Sha        string        `json:"sha"`
+	Ref        string        `json:"ref"`
+	Status     string        `json:"status"`
+	WebURL     string        `json:"web_url"`
+	LogURL     string        `json:"kibana_url"`
+	Jobs       []Jobssummary `json:"jobs"`
 }
 
 type dashboard struct {
@@ -130,17 +160,18 @@ type BuildJobssummary struct {
 
 // BuildpipelineSummary contains the details of a builds pipelines
 type BuildpipelineSummary struct {
-	Project      string             `json:"project"`
-	ID           int                `json:"id"`
-	Sha          string             `json:"sha"`
-	Ref          string             `json:"ref"`
-	Status       string             `json:"status"`
-	WebURL       string             `json:"web_url"`
-	PacketV15PID string             `json:"packet_v15_pid"`
-	PacketV14PID string             `json:"packet_v14_pid"`
-	PacketV13PID string             `json:"packet_v13_pid"`
-	KonvoyPID    string             `json:"konvoy_pid"`
-	Jobs         []BuildJobssummary `json:"jobs"`
+	Project       int    `json:"project"`
+	ID            int    `json:"id"`
+	Sha           string `json:"sha"`
+	Ref           string `json:"ref"`
+	Status        string `json:"status"`
+	WebURL        string `json:"web_url"`
+	Committeddate string `json:"committeddate"`
+	AuthorName    string `json:"author_name"`
+	AuthorEmail   string `json:"author_email"`
+	ComitterName  string `json:"comitter_name"`
+	CommitTitle   string `json:"commit_title"`
+	CommitMessage string `json:"commit_message"`
 }
 
 // Builddashboard contains the details related to builds

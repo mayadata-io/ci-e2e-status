@@ -6,8 +6,8 @@ import (
 
 	"github.com/golang/glog"
 	_ "github.com/lib/pq"
-	"github.com/mayadata-io/ci-e2e-status/database"
-	"github.com/mayadata-io/ci-e2e-status/handler"
+	"github.com/mayadata-io/OEP/database"
+	"github.com/mayadata-io/OEP/handler"
 )
 
 func main() {
@@ -15,12 +15,8 @@ func main() {
 	flag.Lookup("logtostderr").Value.Set("true")
 	// Initailze Db connection
 	database.InitDb()
-	// Return value to all / api path
-	http.HandleFunc("/packet/v15", handler.PacketHandlerV15)
-	http.HandleFunc("/packet/v14", handler.PacketHandlerV14)
-	http.HandleFunc("/packet/v13", handler.PacketHandlerV13)
-	http.HandleFunc("/build", handler.Buildhandler)
-	http.HandleFunc("/konvoy", handler.KonvoyHandler)
+	http.HandleFunc("/commit", handler.CommitHandler)
+	http.HandleFunc("/pipelines", handler.PipelineHandler)
 	glog.Infof("Listening on http://0.0.0.0:3000")
 
 	// Trigger db update function
