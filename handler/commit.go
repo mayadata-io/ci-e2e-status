@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/golang/glog"
-	"github.com/mayadata-io/OEP/database"
+	"github.com/mayadata-io/ci-e2e-status/database"
 )
 
 // CommitHandler return eks pipeline data to /commit path

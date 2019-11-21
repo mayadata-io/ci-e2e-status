@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/golang/glog"
-	"github.com/mayadata-io/OEP/database"
+	"github.com/mayadata-io/ci-e2e-status/database"
 )
 
 // PipelineHandler return packet pipeline data to /packet path
