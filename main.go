@@ -15,8 +15,8 @@ func main() {
 	flag.Lookup("logtostderr").Value.Set("true")
 	// Initailze Db connection
 	database.InitDb()
-	http.HandleFunc("/commit", handler.CommitHandler)
-	http.HandleFunc("/pipelines", handler.PipelineHandler)
+	http.HandleFunc("/api/commit", handler.CommitHandler)
+	http.HandleFunc("/api/pipelines", handler.PipelineHandler)
 	glog.Infof("Listening on http://0.0.0.0:3000")
 
 	// Trigger db update function
