@@ -6,7 +6,7 @@ build:
   only:
   - oep
   script :
-  - export REPO=openebs/ci-dashboard-postgres
+  - export REPO=mayadataio/ci-dashboard-postgres
   - export COMMIT=oep-${CI_COMMIT_SHA:0:8}
   - docker login -u "$DOCKER_USER" -p "$DOCKER_PASS" && docker build --no-cache -t $REPO:$COMMIT . && docker push $REPO:$COMMIT
   - docker images

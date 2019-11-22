@@ -108,7 +108,7 @@ func QueryPipelineData(datas *dashboard) error {
 //
 // oepData from gitlab api for oep and dump to database
 func pipelineData(token string) {
-	query := fmt.Sprintf("SELECT project,id FROM commit_detail ORDER BY id DESC FETCH FIRST 20 ROWS ONLY;")
+	query := fmt.Sprintf("SELECT project,id FROM commit_detail ORDER BY id DESC FETCH FIRST 30 ROWS ONLY;")
 	oepPipelineID, err := database.Db.Query(query)
 	if err != nil {
 		glog.Error("OEP pipeline quering data Error:", err)

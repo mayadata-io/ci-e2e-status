@@ -83,7 +83,7 @@ func commitData(token string) {
 }
 
 func queryBuildDataa(datas *Builddashboard) error {
-	pipelinerows, err := database.Db.Query(`SELECT * FROM commit_detail ORDER BY id DESC`)
+	pipelinerows, err := database.Db.Query(`SELECT * FROM commit_detail ORDER BY id DESC FETCH FIRST 30 ROWS ONLY;`)
 	if err != nil {
 		return err
 	}
