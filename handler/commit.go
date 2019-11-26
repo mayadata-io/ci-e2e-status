@@ -33,14 +33,13 @@ func CommitHandler(w http.ResponseWriter, r *http.Request) {
 func commitData(token string) {
 	repo := []int{6, 5, 1, 2}
 	for _, repo := range repo {
-		mayaUIPipelineData, err := pipelineDataa(repo, token)
+		pipelineData, err := pipelineDataa(repo, token)
 		if err != nil {
 			glog.Error(err)
 			return
 		}
-		for i := range mayaUIPipelineData {
-			// glog.Infoln(i, mayaUIPipelineData[i])
-			commitDetails, err := getCommitData(mayaUIPipelineData[i].ID, token, repo)
+		for i := range pipelineData {
+			commitDetails, err := getCommitData(pipelineData[i].ID, token, repo)
 			if err != nil {
 				glog.Error(err)
 				return
@@ -69,15 +68,6 @@ func commitData(token string) {
 				glog.Error(err)
 			}
 			glog.Infoln("New Commit for " + strconv.Itoa(repo) + " Project : " + commitDetails.Sha)
-
-			// pipelineJobss, err := pipelineJobsDataa(commitDetails.CommitPipeline.IDD, token, 6)
-			// if err != nil {
-			// 	glog.Error(err)
-			// 	return
-			// }
-			// for i := range pipelineJobss {
-			// 	glog.Infoln("PipelineDetails", pipelineJobss[i].Name)
-			// }
 		}
 	}
 }
@@ -115,32 +105,6 @@ func queryBuildDataa(datas *Builddashboard) error {
 	}
 	return nil
 }
-
-// // jivaPipelineJobs will get pipeline jobs details from gitlab api
-// func pipelineJobsDataa(id int, token string, project int) (BuildJobs, error) {
-// 	// url := jobURLGenerator(id, project)
-// 	url := BaseURL + "api/v4/projects/" + strconv.Itoa(project) + "/pipelines/" + strconv.Itoa(id) + "/jobs"
-// 	glog.Infoln("url", url)
-// 	req, err := http.NewRequest("GET", url, nil)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	req.Close = true
-// 	req.Header.Set("Connection", "close")
-// 	req.Header.Add("PRIVATE-TOKEN", token)
-// 	res, err := http.DefaultClient.Do(req)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	defer res.Body.Close()
-// 	body, err := ioutil.ReadAll(res.Body)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	var obj BuildJobs
-// 	json.Unmarshal(body, &obj)
-// 	return obj, nil
-// }
 
 // // pipelineData will fetch the data from gitlab API
 func pipelineDataa(project int, token string) (Commit, error) {

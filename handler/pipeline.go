@@ -32,7 +32,7 @@ func PipelineHandler(w http.ResponseWriter, r *http.Request) {
 // QueryPipelineData fetch the pipeline data as well as jobs data form Packet table of database
 func QueryPipelineData(datas *dashboard) error {
 	// Select all data from packetpipeline table of DB
-	query := fmt.Sprintf("SELECT pipelineid,projectid,sha,ref,status,web_url,kibana_url FROM oep_pipelines ORDER BY pipelineid DESC;")
+	query := fmt.Sprintf("SELECT pipelineid,projectid,sha,ref,status,web_url,kibana_url,author_name,author_email,message FROM oep_pipelines ORDER BY pipelineid DESC;")
 	pipelinerows, err := database.Db.Query(query)
 	if err != nil {
 		return err
@@ -50,6 +50,9 @@ func QueryPipelineData(datas *dashboard) error {
 			&pipelinedata.Status,
 			&pipelinedata.WebURL,
 			&pipelinedata.LogURL,
+			&pipelinedata.AuthorName,
+			&pipelinedata.AuthorEmail,
+			&pipelinedata.Message,
 		)
 		if err != nil {
 			return err
@@ -96,19 +99,9 @@ func QueryPipelineData(datas *dashboard) error {
 	return nil
 }
 
-//
-
-//
-
-//
-//
-
-//
-
-//
 // oepData from gitlab api for oep and dump to database
 func pipelineData(token string) {
-	query := fmt.Sprintf("SELECT project,id FROM commit_detail ORDER BY id DESC FETCH FIRST 30 ROWS ONLY;")
+	query := fmt.Sprintf("SELECT project,id,author_name,author_email,commit_message FROM commit_detail ORDER BY id DESC FETCH FIRST 30 ROWS ONLY;")
 	oepPipelineID, err := database.Db.Query(query)
 	if err != nil {
 		glog.Error("OEP pipeline quering data Error:", err)
@@ -120,6 +113,9 @@ func pipelineData(token string) {
 		err = oepPipelineID.Scan(
 			&pipelinedata.ProjectID,
 			&pipelinedata.ID,
+			&pipelinedata.AuthorName,
+			&pipelinedata.AuthorEmail,
+			&pipelinedata.Message,
 		)
 		defer oepPipelineID.Close()
 		oepPipelineData, err := oepPipeline(token, pipelinedata.ID, pipelinedata.ProjectID)
@@ -137,8 +133,8 @@ func pipelineData(token string) {
 			JobFinishedAt := pipelineJobsdata[len(pipelineJobsdata)-1].FinishedAt
 			logURL = Kibanaloglink(oepPipelineData.Sha, oepPipelineData.ID, oepPipelineData.Status, jobStartedAt, JobFinishedAt)
 		}
-		sqlStatement := fmt.Sprintf(`INSERT INTO oep_pipelines (projectid, pipelineid, sha, ref, status, web_url, kibana_url) 
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		sqlStatement := fmt.Sprintf(`INSERT INTO oep_pipelines (projectid, pipelineid, sha, ref, status, web_url, kibana_url, author_name, author_email, message )
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		 ON CONFLICT (pipelineid) DO UPDATE SET sha = $3, ref = $4, status = $5, web_url = $6, kibana_url = $7 RETURNING pipelineid;`)
 		pipelineid := 0
 		err = database.Db.QueryRow(sqlStatement,
@@ -149,6 +145,9 @@ func pipelineData(token string) {
 			oepPipelineData.Status,
 			oepPipelineData.WebURL,
 			logURL,
+			pipelinedata.AuthorName,
+			pipelinedata.AuthorEmail,
+			pipelinedata.Message,
 		).Scan(&pipelineid)
 		if err != nil {
 			glog.Error(err)

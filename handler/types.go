@@ -66,7 +66,7 @@ type CommitData struct {
 	AuthorEmail    string `json:"author_email"`
 	CommitterName  string `json:"committer_name"`
 	CommitterEmail string `json:"committer_email"`
-	CommitMessage  string `json:"message"`
+	CommitMessage  string `json:"title"`
 	CommitPipeline struct {
 		ID     int    `json:"id"`
 		Sha    string `json:"sha"`
@@ -104,20 +104,26 @@ type Jobssummary struct {
 
 // TriggredID contains the details of a gitlab pipelines
 type TriggredID struct {
-	ID        int `json:"id"`
-	ProjectID int `json:"project_id"`
+	ID          int    `json:"id"`
+	ProjectID   int    `json:"project_id"`
+	AuthorName  string `json:"author_name"`
+	AuthorEmail string `json:"author_email"`
+	Message     string `json:"message"`
 }
 
 // pipelineSummary contains the details of a gitlab pipelines
 type pipelineSummary struct {
-	PipelineID int           `json:"pipelineid"`
-	ProjectID  int           `json:"projectid"`
-	Sha        string        `json:"sha"`
-	Ref        string        `json:"ref"`
-	Status     string        `json:"status"`
-	WebURL     string        `json:"web_url"`
-	LogURL     string        `json:"kibana_url"`
-	Jobs       []Jobssummary `json:"jobs"`
+	PipelineID  int           `json:"pipelineid"`
+	ProjectID   int           `json:"projectid"`
+	Sha         string        `json:"sha"`
+	Ref         string        `json:"ref"`
+	Status      string        `json:"status"`
+	WebURL      string        `json:"web_url"`
+	LogURL      string        `json:"kibana_url"`
+	AuthorName  string        `json:"author_name"`
+	AuthorEmail string        `json:"author_email"`
+	Message     string        `json:"message"`
+	Jobs        []Jobssummary `json:"jobs"`
 }
 
 type dashboard struct {
