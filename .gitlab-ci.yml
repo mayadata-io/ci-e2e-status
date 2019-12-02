@@ -6,8 +6,8 @@ build:
   only:
   - master
   script :
-  - export REPO=openebs/ci-dashboard-postgres
-  - export COMMIT=${CI_COMMIT_SHA:0:8}
+  - export REPO=mayadata/openebs-go-backend-postgresql
+  - export COMMIT=openebs-ci-${CI_COMMIT_SHA:0:8}
   - docker login -u "$DOCKER_USER" -p "$DOCKER_PASS" && docker build --no-cache -t $REPO:$COMMIT . && docker push $REPO:$COMMIT
   - docker images
   - docker rmi $REPO:$COMMIT
