@@ -49,17 +49,17 @@ func BuildData(token string) {
 		// Getting webURL link for getting triggredID
 		baselineJobsWebURL := getBaselineJobWebURL(jivaJobsData)
 		// Get GKE, Triggred pipeline ID for jiva build
-		packetV15PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-15")
+		packetV15PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-antepenultimate")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get EKS, Triggred pipeline ID for jiva build
-		packetV14PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-14")
+		packetV14PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-penultimate")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get AKS, Triggred pipeline ID for jiva build
-		packetV13PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-13")
+		packetV13PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-ultimate")
 		if err != nil {
 			glog.Error(err)
 		}
@@ -136,17 +136,17 @@ func BuildData(token string) {
 		// Getting webURL link for getting triggredID
 		baselineJobsWebURL := getBaselineJobWebURL(mayaJobsData)
 		// Get GKE, Triggred pipeline ID for maya build
-		packetV15PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-15")
+		packetV15PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-antepenultimate")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get EKS, Triggred pipeline ID for maya build
-		packetV14PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-14")
+		packetV14PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-penultimate")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get AKS, Triggred pipeline ID for maya build
-		packetV13PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-13")
+		packetV13PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-ultimate")
 		if err != nil {
 			glog.Error(err)
 		}
@@ -223,17 +223,17 @@ func BuildData(token string) {
 		// Getting webURL link for getting triggredID
 		baselineJobsWebURL := getBaselineJobWebURL(zfsJobsData)
 		// Get GKE, Triggred pipeline ID for zfs build
-		packetV15PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-15")
+		packetV15PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-antepenultimate")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get EKS, Triggred pipeline ID for zfs build
-		packetV14PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-14")
+		packetV14PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-penultimate")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get AKS, Triggred pipeline ID for zfs build
-		packetV13PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-13")
+		packetV13PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-ultimate")
 		if err != nil {
 			glog.Error(err)
 		}
@@ -310,17 +310,17 @@ func BuildData(token string) {
 		// Getting webURL link for getting triggredID
 		baselineJobsWebURL := getBaselineJobWebURL(istgtJobsData)
 		// Get GKE, Triggred pipeline ID for istgt build
-		packetV15PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-15")
+		packetV15PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-antepenultimate")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get EKS, Triggred pipeline ID for istgt build
-		packetV14PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-14")
+		packetV14PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-penultimate")
 		if err != nil {
 			glog.Error(err)
 		}
 		// Get AKS, Triggred pipeline ID for istgt build
-		packetV13PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-1-13")
+		packetV13PID, err := getTriggerPipelineid(baselineJobsWebURL, "k8s-ultimate")
 		if err != nil {
 			glog.Error(err)
 		}
