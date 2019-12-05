@@ -59,7 +59,7 @@ func OepQueryPipelineData(datas *dashboard) error {
 			return err
 		}
 		// Query packetjobs data of respective pipeline using pipelineID from packetjobs table
-		jobsquery := fmt.Sprintf("SELECT pipelineid,id,status,stage,name,ref,created_at,started_at,finished_at FROM oep_pipeline_jobs WHERE pipelineid = $1 ORDER BY id DESC")
+		jobsquery := fmt.Sprintf("SELECT pipelineid,id,status,stage,name,ref,created_at,started_at,finished_at FROM oep_pipeline_jobs WHERE pipelineid = $1 ORDER BY id;")
 		jobsrows, err := database.Db.Query(jobsquery, pipelinedata.PipelineID)
 		if err != nil {
 			return err
