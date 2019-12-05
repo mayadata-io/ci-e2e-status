@@ -18,6 +18,7 @@ func UpdateDatabase() {
 	// Update the database, This wil run only first time
 	commitData(token)
 	pipelineData(token)
+	// oepPipeline(token)
 	// loop will iterate at every 2nd minute and update the database
 	tick := time.Tick(2 * time.Minute)
 	for range tick {

@@ -16,7 +16,10 @@ func main() {
 	// Initailze Db connection
 	database.InitDb()
 	http.HandleFunc("/api/commit", handler.CommitHandler)
-	http.HandleFunc("/api/pipelines", handler.PipelineHandler)
+	http.HandleFunc("/api/build", handler.PipelineHandler)
+	http.HandleFunc("/api/pipelines", handler.OepPipelineHandler)
+
+	// OepPipelineHandler
 	glog.Infof("Listening on http://0.0.0.0:3000")
 
 	// Trigger db update function

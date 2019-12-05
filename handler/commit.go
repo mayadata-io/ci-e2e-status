@@ -31,7 +31,7 @@ func CommitHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func commitData(token string) {
-	repo := []int{6, 5, 1, 2}
+	repo := []int{1, 6, 14, 15, 16, 17, 18}
 	for _, repo := range repo {
 		pipelineData, err := pipelineDataa(repo, token)
 		if err != nil {
@@ -73,7 +73,7 @@ func commitData(token string) {
 }
 
 func queryBuildDataa(datas *Builddashboard) error {
-	pipelinerows, err := database.Db.Query(`SELECT * FROM commit_detail ORDER BY id DESC FETCH FIRST 30 ROWS ONLY;`)
+	pipelinerows, err := database.Db.Query(`SELECT * FROM commit_detail WHERE ref='staging' OR ref='master' ORDER BY id DESC FETCH FIRST 50 ROWS ONLY;`)
 	if err != nil {
 		return err
 	}

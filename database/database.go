@@ -55,14 +55,28 @@ func createTable() {
 	}
 	defer value.Close()
 	// create build pipeline jobs table in database
-	query = fmt.Sprintf("CREATE TABLE IF NOT EXISTS oep_pipelines(projectid INT, pipelineid INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, kibana_url VARCHAR, started_at VARCHAR, finished_at VARCHAR, author_name VARCHAR, author_email VARCHAR, message VARCHAR);")
+	query = fmt.Sprintf("CREATE TABLE IF NOT EXISTS oep_build(projectid INT, pipelineid INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, kibana_url VARCHAR, started_at VARCHAR, finished_at VARCHAR, author_name VARCHAR, author_email VARCHAR, message VARCHAR);")
 	value, err = Db.Query(query)
 	if err != nil {
 		glog.Error(err)
 	}
 	defer value.Close()
 	//create pipelines jobs table
-	query = fmt.Sprintf("CREATE TABLE IF NOT EXISTS oep_pipelines_jobs(pipelineid INT, id INT PRIMARY KEY,status VARCHAR, stage VARCHAR, name VARCHAR, ref VARCHAR, created_at VARCHAR, started_at VARCHAR, finished_at VARCHAR, job_log_url VARCHAR);")
+	query = fmt.Sprintf("CREATE TABLE IF NOT EXISTS oep_build_jobs(pipelineid INT, id INT PRIMARY KEY,status VARCHAR, stage VARCHAR, name VARCHAR, ref VARCHAR, created_at VARCHAR, started_at VARCHAR, finished_at VARCHAR, job_log_url VARCHAR);")
+	value, err = Db.Query(query)
+	if err != nil {
+		glog.Error(err)
+	}
+	defer value.Close()
+	// create build pipeline jobs table in database
+	query = fmt.Sprintf("CREATE TABLE IF NOT EXISTS oep_pipeline(projectid INT, pipelineid INT, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, kibana_url VARCHAR, started_at VARCHAR, finished_at VARCHAR, author_name VARCHAR, author_email VARCHAR, message VARCHAR, build_pipeline_id INT PRIMARY KEY);")
+	value, err = Db.Query(query)
+	if err != nil {
+		glog.Error(err)
+	}
+	defer value.Close()
+	//create pipelines jobs table
+	query = fmt.Sprintf("CREATE TABLE IF NOT EXISTS oep_pipeline_jobs(pipelineid INT, id INT PRIMARY KEY,status VARCHAR, stage VARCHAR, name VARCHAR, ref VARCHAR, created_at VARCHAR, started_at VARCHAR, finished_at VARCHAR, job_log_url VARCHAR);")
 	value, err = Db.Query(query)
 	if err != nil {
 		glog.Error(err)
