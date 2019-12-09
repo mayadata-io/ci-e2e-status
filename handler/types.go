@@ -57,6 +57,7 @@ type Jobs []struct {
 	CreatedAt  string `json:"created_at"`
 	StartedAt  string `json:"started_at"`
 	FinishedAt string `json:"finished_at"`
+	WebURL     string `json:"web_url"`
 }
 
 // Jobssummary struct
@@ -146,4 +147,23 @@ type BuildpipelineSummary struct {
 // Builddashboard contains the details related to builds
 type Builddashboard struct {
 	Dashboard []BuildpipelineSummary `json:"dashboard"`
+}
+
+// OpenshiftpipelineSummary contains the details of a openshifts pipelines
+type OpenshiftpipelineSummary struct {
+	Project      string             `json:"project"`
+	ID           int                `json:"id"`
+	Sha          string             `json:"sha"`
+	Ref          string             `json:"ref"`
+	Status       string             `json:"status"`
+	WebURL       string             `json:"web_url"`
+	OpenshiftPID string             `json:"openshift_pid"`
+	LogURL       string             `json:"kibana_url" `
+	ReleaseTag   string             `json:"release_tag"`
+	Jobs         []BuildJobssummary `json:"jobs"`
+}
+
+// Openshiftdashboard contains the details related to openshifts
+type Openshiftdashboard struct {
+	Dashboard []OpenshiftpipelineSummary `json:"dashboard"`
 }
