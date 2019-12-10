@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/mayadata-io/ci-e2e-status/database"
@@ -117,7 +118,7 @@ func getReleaseData(token, branch string) (Pipeline, error) {
 
 func releasePipelineJobs(pipelineID int, token string) (Jobs, error) {
 	// Generate pipeline jobs api url using BaseURL, pipelineID and OPENSHIFTID
-	url := BaseURL + "api/v4/projects/36/pipelines/" + strconv.Itoa(pipelineID) + "/jobs"
+	url := BaseURL + "api/v4/projects/36/pipelines/" + strconv.Itoa(pipelineID) + "/jobs?per_page=100"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -126,7 +127,10 @@ func releasePipelineJobs(pipelineID int, token string) (Jobs, error) {
 	// Set header for api request
 	req.Header.Set("Connection", "close")
 	req.Header.Add("PRIVATE-TOKEN", token)
-	res, err := http.DefaultClient.Do(req)
+	client := http.Client{
+		Timeout: time.Minute * time.Duration(1),
+	}
+	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -141,6 +145,7 @@ func releasePipelineJobs(pipelineID int, token string) (Jobs, error) {
 // openshiftCommit from gitlab api and store to database
 func releaseBranch(token, project, branch, pipelineTable, jobTable string) {
 	var logURL string
+	var releaseTag string
 	releaseData, err := getReleaseData(token, branch)
 	if err != nil {
 		glog.Error(err)
@@ -158,12 +163,12 @@ func releaseBranch(token, project, branch, pipelineTable, jobTable string) {
 			JobFinishedAt := pipelineJobsData[len(pipelineJobsData)-1].FinishedAt
 			logURL = Kibanaloglink(releaseData[i].Sha, releaseData[i].ID, releaseData[i].Status, jobStartedAt, JobFinishedAt)
 		}
-		var releaseTag = ""
 		releaseTag, err = getReleaseTag(pipelineJobsData, token)
 		if err != nil {
 			glog.Error(err)
 		}
-		glog.Infoln("releaseTagFuc Result : - > : ")
+
+		glog.Infoln("releaseTagFuc Result : - > : ", releaseTag)
 		// Add pipelines data to Database
 		sqlStatement := fmt.Sprintf("INSERT INTO %s (project, id, sha, ref, status, web_url, openshift_pid, kibana_url, release_tag) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"+
 			"ON CONFLICT (id) DO UPDATE SET status = $5, openshift_pid = $7, kibana_url = $8, release_tag = $9 RETURNING id;", pipelineTable)
@@ -212,25 +217,30 @@ func getReleaseTag(jobsData Jobs, token string) (string, error) {
 	var jobURL string
 	for _, value := range jobsData {
 		if value.Name == "K9YC-OpenEBS" {
-			jobURL = value.WebURL
+			jobURL = value.WebURL + "/raw"
 		}
 	}
-	url := jobURL + "/raw"
-	req, err := http.NewRequest("GET", url, nil)
+	// url := jobURL
+	glog.Infoln("url----->", jobURL)
+	req, err := http.NewRequest("GET", jobURL, nil)
 	if err != nil {
-		return "NA1", err
+		return "NA", err
 	}
 	req.Close = true
 	req.Header.Set("Connection", "close")
-	res, err := http.DefaultClient.Do(req)
+	// req.Header.Add("PRIVATE-TOKEN", token
+	client := http.Client{
+		Timeout: time.Minute * time.Duration(1),
+	}
+	res, err := client.Do(req)
 	if err != nil {
-		return "NA2", err
+		return "NA", err
 	}
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
 	data := string(body)
 	if data == "" {
-		return "NA3", err
+		return "NA", err
 	}
 	grep := exec.Command("grep", "-oP", "(?<=openebs/m-apiserver)[^ ]*")
 	ps := exec.Command("echo", data)
@@ -239,16 +249,18 @@ func getReleaseTag(jobsData Jobs, token string) (string, error) {
 	defer pipe.Close()
 	grep.Stdin = pipe
 	ps.Start()
+
 	// Run and get the output of grep.
 	value, _ := grep.Output()
-	glog.Infoln("---Value----Array : ", string(value))
+
 	result := strings.Split(string(value), "\n")
+	glog.Infoln("result----->", result)
 	if result != nil && len(result) > 1 {
 		if result[1] == "" {
-			return "NA4", nil
+			return "NA", nil
 		}
 		result = strings.Split(result[1], ":")
 		return result[1], nil
 	}
-	return "NAF", nil
+	return "NA", nil
 }
