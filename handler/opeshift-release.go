@@ -120,7 +120,7 @@ func releasePipelineJobs(pipelineID int, token string) (Jobs, error) {
 	// Generate pipeline jobs api url using BaseURL, pipelineID and OPENSHIFTID
 	urlTmp := BaseURL + "api/v4/projects/36/pipelines/" + strconv.Itoa(pipelineID) + "/jobs?page="
 	var obj Jobs
-	for i := 1; i < 6; i++ {
+	for i := 1; ; i++ {
 		url := urlTmp + strconv.Itoa(i)
 		req, err := http.NewRequest("GET", url, nil)
 		if err != nil {
@@ -139,6 +139,9 @@ func releasePipelineJobs(pipelineID int, token string) (Jobs, error) {
 		}
 		defer res.Body.Close()
 		body, _ := ioutil.ReadAll(res.Body)
+		if string(body) == "[]" {
+			break
+		}
 		var tmpObj Jobs
 		err = json.Unmarshal(body, &tmpObj)
 		glog.Infoln("error ", err)
@@ -251,8 +254,8 @@ func getReleaseTag(jobsData Jobs, token string) (string, error) {
 		if result[1] == "" {
 			return "NA", nil
 		}
-		resultt := strings.Split(result[1], "\n")
-		return resultt[0], nil
+		releaseVersion := strings.Split(result[1], "\n")
+		return releaseVersion[0], nil
 	}
 	return "NA", nil
 }
