@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -118,27 +118,35 @@ func getReleaseData(token, branch string) (Pipeline, error) {
 
 func releasePipelineJobs(pipelineID int, token string) (Jobs, error) {
 	// Generate pipeline jobs api url using BaseURL, pipelineID and OPENSHIFTID
-	url := BaseURL + "api/v4/projects/36/pipelines/" + strconv.Itoa(pipelineID) + "/jobs?per_page=100"
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Close = true
-	// Set header for api request
-	req.Header.Set("Connection", "close")
-	req.Header.Add("PRIVATE-TOKEN", token)
-	client := http.Client{
-		Timeout: time.Minute * time.Duration(1),
-	}
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-	body, _ := ioutil.ReadAll(res.Body)
-	// Unmarshal response data
+	urlTmp := BaseURL + "api/v4/projects/36/pipelines/" + strconv.Itoa(pipelineID) + "/jobs?page="
 	var obj Jobs
-	json.Unmarshal(body, &obj)
+	for i := 1; ; i++ {
+		url := urlTmp + strconv.Itoa(i)
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return nil, err
+		}
+		req.Close = true
+		// Set header for api request
+		req.Header.Set("Connection", "close")
+		req.Header.Add("PRIVATE-TOKEN", token)
+		client := http.Client{
+			Timeout: time.Minute * time.Duration(2),
+		}
+		res, err := client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		defer res.Body.Close()
+		body, _ := ioutil.ReadAll(res.Body)
+		if string(body) == "[]" {
+			break
+		}
+		var tmpObj Jobs
+		err = json.Unmarshal(body, &tmpObj)
+		glog.Infoln("error ", err)
+		obj = append(obj, tmpObj...)
+	}
 	return obj, nil
 }
 
@@ -220,15 +228,12 @@ func getReleaseTag(jobsData Jobs, token string) (string, error) {
 			jobURL = value.WebURL + "/raw"
 		}
 	}
-	// url := jobURL
-	glog.Infoln("url----->", jobURL)
 	req, err := http.NewRequest("GET", jobURL, nil)
 	if err != nil {
 		return "NA", err
 	}
 	req.Close = true
 	req.Header.Set("Connection", "close")
-	// req.Header.Add("PRIVATE-TOKEN", token
 	client := http.Client{
 		Timeout: time.Minute * time.Duration(1),
 	}
@@ -242,25 +247,15 @@ func getReleaseTag(jobsData Jobs, token string) (string, error) {
 	if data == "" {
 		return "NA", err
 	}
-	grep := exec.Command("grep", "-oP", "(?<=openebs/m-apiserver)[^ ]*")
-	ps := exec.Command("echo", data)
-	// Get ps's stdout and attach it to grep's stdin.
-	pipe, _ := ps.StdoutPipe()
-	defer pipe.Close()
-	grep.Stdin = pipe
-	ps.Start()
-
-	// Run and get the output of grep.
-	value, _ := grep.Output()
-
-	result := strings.Split(string(value), "\n")
-	glog.Infoln("result----->", result)
+	re := regexp.MustCompile("releaseTag[^ ]*")
+	value := re.FindString(data)
+	result := strings.Split(string(value), "=")
 	if result != nil && len(result) > 1 {
 		if result[1] == "" {
 			return "NA", nil
 		}
-		result = strings.Split(result[1], ":")
-		return result[1], nil
+		releaseVersion := strings.Split(result[1], "\n")
+		return releaseVersion[0], nil
 	}
 	return "NA", nil
 }
