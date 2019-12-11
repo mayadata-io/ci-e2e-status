@@ -137,18 +137,13 @@ func releasePipelineJobs(pipelineID int, token string) (Jobs, error) {
 		if err != nil {
 			return nil, err
 		}
-		// glog.Infoln("res", string(res.Body))
 		defer res.Body.Close()
 		body, _ := ioutil.ReadAll(res.Body)
-		// Unmarshal response data
-		// data := string(body)
-		// glog.Infoln("dtaaaa ", data)
 		var tmpObj Jobs
 		err = json.Unmarshal(body, &tmpObj)
 		glog.Infoln("error ", err)
 		obj = append(obj, tmpObj...)
 	}
-	glog.Infoln("---JobsL ", len(obj))
 	return obj, nil
 }
 
@@ -230,15 +225,12 @@ func getReleaseTag(jobsData Jobs, token string) (string, error) {
 			jobURL = value.WebURL + "/raw"
 		}
 	}
-	// url := jobURL
-	// glog.Infoln("url----->", jobURL)
 	req, err := http.NewRequest("GET", jobURL, nil)
 	if err != nil {
 		return "NA", err
 	}
 	req.Close = true
 	req.Header.Set("Connection", "close")
-	// req.Header.Add("PRIVATE-TOKEN", token
 	client := http.Client{
 		Timeout: time.Minute * time.Duration(1),
 	}
@@ -252,12 +244,9 @@ func getReleaseTag(jobsData Jobs, token string) (string, error) {
 	if data == "" {
 		return "NA", err
 	}
-	// glog.Infoln("result----->", data)
 	re := regexp.MustCompile("releaseTag[^ ]*")
 	value := re.FindString(data)
 	result := strings.Split(string(value), "=")
-	glog.Infoln(result)
-
 	if result != nil && len(result) > 1 {
 		if result[1] == "" {
 			return "NA", nil
