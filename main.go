@@ -16,12 +16,11 @@ func main() {
 	// Initailze Db connection
 	database.InitDb()
 	// Return value to all / api path
-	http.HandleFunc("/packet/v15", handler.PacketHandlerV15)
-	http.HandleFunc("/packet/v14", handler.PacketHandlerV14)
-	http.HandleFunc("/packet/v13", handler.PacketHandlerV13)
-	http.HandleFunc("/build", handler.Buildhandler)
+	http.HandleFunc("/packet/ultimate", handler.PacketHandlerUltimate)
+	http.HandleFunc("/packet/penultimate", handler.PacketHandlerPenultimate)
+	http.HandleFunc("/packet/antepenultimate", handler.PacketHandlerAntepenultimate)
 	http.HandleFunc("/konvoy", handler.KonvoyHandler)
-	http.HandleFunc("/openshift/release", handler.OpenshiftHandlerRelease)
+	http.HandleFunc("/openshift/release", handler.OpenshiftHandlerReleasee)
 
 	glog.Infof("Listening on http://0.0.0.0:3000")
 

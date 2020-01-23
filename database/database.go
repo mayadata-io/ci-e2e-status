@@ -47,11 +47,11 @@ func InitDb() {
 // createTable in database if not abvailable
 func createTable() {
 	// Create platform, pipeline and job table
-	pipeline := []string{"packet_pipeline_v15", "packet_pipeline_v14", "packet_pipeline_v13", "konvoy_pipeline"}
-	pipelineJobs := []string{"packet_jobs_v15", "packet_jobs_v14", "packet_jobs_v13", "konvoy_jobs"}
+	pipeline := []string{"packet_pipeline_k8s_ultimate", "packet_pipeline_k8s_penultimate", "packet_pipeline_k8s_antepenultimate", "konvoy_pipeline", "release_pipeline_data"}
+	pipelineJobs := []string{"packet_jobs_k8s_ultimate", "packet_jobs_k8s_penultimate", "packet_jobs_k8s_antepenultimate", "konvoy_jobs", "release_jobs_data"}
 	// Create pipeline table in database
 	for i := range pipeline {
-		query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(build_pipelineid INT PRIMARY KEY, id INT, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, kibana_url VARCHAR);", pipeline[i])
+		query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(project VARCHAR, id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, openshift_pid VARCHAR, kibana_url VARCHAR, release_tag VARCHAR);", pipeline[i])
 		value, err := Db.Query(query)
 		if err != nil {
 			glog.Error(err)
@@ -60,42 +60,13 @@ func createTable() {
 	}
 	// Create pipeline jobs table in database
 	for i := range pipelineJobs {
-		query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(pipelineid INT, id INT PRIMARY KEY,status VARCHAR, stage VARCHAR, name VARCHAR, ref VARCHAR, created_at VARCHAR, started_at VARCHAR, finished_at VARCHAR, job_log_url VARCHAR);", pipelineJobs[i])
+		query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(pipelineid INT, id INT PRIMARY KEY,status VARCHAR, stage VARCHAR, name VARCHAR, ref VARCHAR, created_at VARCHAR, started_at VARCHAR, finished_at VARCHAR, message VARCHAR, author_name VARCHAR);", pipelineJobs[i])
 		value, err := Db.Query(query)
 		if err != nil {
 			glog.Error(err)
 		}
 		defer value.Close()
 	}
-	// create build pipelines table for build related r/w operation
-	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS build_pipeline(project VARCHAR, id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, packet_v15_pid VARCHAR, packet_v14_pid VARCHAR, packet_v13_pid VARCHAR, konvoy_pid VARCHAR);")
-	value, err := Db.Query(query)
-	if err != nil {
-		glog.Error(err)
-	}
-	defer value.Close()
-
-	// create build pipeline jobs table in database
-	query = fmt.Sprintf("CREATE TABLE IF NOT EXISTS build_jobs(pipelineid INT, id INT PRIMARY KEY,status VARCHAR, stage VARCHAR, name VARCHAR, ref VARCHAR, created_at VARCHAR, started_at VARCHAR, finished_at VARCHAR, message VARCHAR, author_name VARCHAR);")
-	value, err = Db.Query(query)
-	if err != nil {
-		glog.Error(err)
-	}
-	defer value.Close() // create build pipelines table for build related r/w operation
-	query = fmt.Sprintf("CREATE TABLE IF NOT EXISTS release_pipeline_data(project VARCHAR, id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, openshift_pid VARCHAR, kibana_url VARCHAR, release_tag VARCHAR);")
-	value, err = Db.Query(query)
-	if err != nil {
-		glog.Error(err)
-	}
-	defer value.Close()
-	// create build pipeline jobs table in database
-	query = fmt.Sprintf("CREATE TABLE IF NOT EXISTS release_jobs_data(pipelineid INT, id INT PRIMARY KEY,status VARCHAR, stage VARCHAR, name VARCHAR, ref VARCHAR, created_at VARCHAR, started_at VARCHAR, finished_at VARCHAR, message VARCHAR, author_name VARCHAR);")
-	value, err = Db.Query(query)
-	if err != nil {
-		glog.Error(err)
-	}
-	defer value.Close()
-
 }
 
 // dbConfig get config from environment variable
