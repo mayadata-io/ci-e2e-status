@@ -16,29 +16,28 @@ func UpdateDatabase() {
 		glog.Fatalf("TOKEN environment variable required")
 	}
 	// Update the database, This wil run only first time
-	BuildData(token)
-	k8sVersion := []string{"v15", "v14", "v13"}
+	k8sVersion := []string{"ultimate", "penultimate", "antepenultimate"}
 	for _, k8sVersion := range k8sVersion {
-		columnName := "packet_" + k8sVersion + "_pid"
-		pipelineTable := "packet_pipeline_" + k8sVersion
-		jobTable := "packet_jobs_" + k8sVersion
-		go PacketData(token, columnName, pipelineTable, jobTable)
+		branch := "k8s-" + k8sVersion
+		pipelineTable := "packet_pipeline_k8s_" + k8sVersion
+		jobTable := "packet_jobs_k8s_" + k8sVersion
+		getPlatformData(token, PACKETID, branch, pipelineTable, jobTable) //e2e-packet
 	}
-	go KonvoyData(token, "konvoy_pid", "konvoy_pipeline", "konvoy_jobs")
-	go releaseBranch(token, "e2e-openshift", "release-branch", "release_pipeline_data", "release_jobs_data")
+	go getPlatformData(token, KONVOYID, "release-branch", "konvoy_pipeline", "konvoy_jobs")                // e2e-konvoy
+	go getPlatformData(token, OPENSHIFTID, "release-branch", "release_pipeline_data", "release_jobs_data") //e2e-openshift
 
 	// loop will iterate at every 2nd minute and update the database
 	tick := time.Tick(2 * time.Minute)
 	for range tick {
-		BuildData(token)
+		k8sVersion := []string{"ultimate", "penultimate", "antepenultimate"}
 		for _, k8sVersion := range k8sVersion {
-			columnName := "packet_" + k8sVersion + "_pid"
-			pipelineTable := "packet_pipeline_" + k8sVersion
-			jobTable := "packet_jobs_" + k8sVersion
-			go PacketData(token, columnName, pipelineTable, jobTable)
+			branch := "k8s-" + k8sVersion
+			pipelineTable := "packet_pipeline_k8s_" + k8sVersion
+			jobTable := "packet_jobs_k8s_" + k8sVersion
+			getPlatformData(token, PACKETID, branch, pipelineTable, jobTable) //e2e-packet
 		}
-		go KonvoyData(token, "konvoy_pid", "konvoy_pipeline", "konvoy_jobs")
-		go releaseBranch(token, "e2e-openshift", "release-branch", "release_pipeline_data", "release_jobs_data")
-
+		go getPlatformData(token, KONVOYID, "release-branch", "konvoy_pipeline", "konvoy_jobs")                // e2e-konvoy
+		go getPlatformData(token, OPENSHIFTID, "release-branch", "release_pipeline_data", "release_jobs_data") //e2e-openshift
 	}
+
 }

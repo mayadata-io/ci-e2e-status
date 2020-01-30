@@ -2,12 +2,13 @@ package handler
 
 // PlatformID assignment from gitlab repository
 const (
-	PACKETID = "27"
-	KONVOYID = "34"
-	MAYAID   = "7"
-	JIVAID   = "6"
-	ISTGTID  = "5"
-	ZFSID    = "8"
+	PACKETID    = "27"
+	KONVOYID    = "34"
+	OPENSHIFTID = "36"
+	MAYAID      = "7"
+	JIVAID      = "6"
+	ISTGTID     = "5"
+	ZFSID       = "8"
 )
 
 // BranchName assignment from gitlab repository
@@ -125,8 +126,6 @@ type BuildJobssummary struct {
 	CreatedAt  string `json:"created_at"`
 	StartedAt  string `json:"started_at"`
 	FinishedAt string `json:"finished_at"`
-	Message    string `json:"message"`
-	AuthorName string `json:"author_name"`
 }
 
 // BuildpipelineSummary contains the details of a builds pipelines
