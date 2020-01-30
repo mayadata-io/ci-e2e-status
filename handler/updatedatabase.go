@@ -16,8 +16,6 @@ func UpdateDatabase() {
 		glog.Fatalf("TOKEN environment variable required")
 	}
 	// Update the database, This wil run only first time
-	// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
 	k8sVersion := []string{"ultimate", "penultimate", "antepenultimate"}
 	for _, k8sVersion := range k8sVersion {
 		branch := "k8s-" + k8sVersion
@@ -29,7 +27,6 @@ func UpdateDatabase() {
 	go getPlatformData(token, OPENSHIFTID, "release-branch", "release_pipeline_data", "release_jobs_data") //e2e-openshift
 
 	// loop will iterate at every 2nd minute and update the database
-	// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 	tick := time.Tick(2 * time.Minute)
 	for range tick {
 		k8sVersion := []string{"ultimate", "penultimate", "antepenultimate"}
@@ -42,6 +39,5 @@ func UpdateDatabase() {
 		go getPlatformData(token, KONVOYID, "release-branch", "konvoy_pipeline", "konvoy_jobs")                // e2e-konvoy
 		go getPlatformData(token, OPENSHIFTID, "release-branch", "release_pipeline_data", "release_jobs_data") //e2e-openshift
 	}
-	// -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 }
