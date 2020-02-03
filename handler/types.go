@@ -117,15 +117,16 @@ type BuildJobs []struct {
 
 // BuildJobssummary contains the details of builds job for database
 type BuildJobssummary struct {
-	PipelineID int    `json:"pipelineid"`
-	ID         int    `json:"id"`
-	Status     string `json:"status"`
-	Stage      string `json:"stage"`
-	Name       string `json:"name"`
-	Ref        string `json:"ref"`
-	CreatedAt  string `json:"created_at"`
-	StartedAt  string `json:"started_at"`
-	FinishedAt string `json:"finished_at"`
+	PipelineID   int    `json:"pipelineid"`
+	ID           int    `json:"id"`
+	Status       string `json:"status"`
+	Stage        string `json:"stage"`
+	Name         string `json:"name"`
+	Ref          string `json:"ref"`
+	GithubReadme string `json:"github_readme"`
+	CreatedAt    string `json:"created_at"`
+	StartedAt    string `json:"started_at"`
+	FinishedAt   string `json:"finished_at"`
 }
 
 // BuildpipelineSummary contains the details of a builds pipelines
