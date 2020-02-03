@@ -38,7 +38,7 @@ func QueryData(datas *Openshiftdashboard, pipelineTable string, jobsTable string
 		if err != nil {
 			return err
 		}
-		jobsquery := fmt.Sprintf("SELECT pipelineid, id, status , stage , name , ref , created_at , started_at , finished_at  FROM %s WHERE pipelineid = $1 ORDER BY id;", jobsTable)
+		jobsquery := fmt.Sprintf("SELECT pipelineid, id, status , stage , name , ref ,github_readme, created_at , started_at , finished_at  FROM %s WHERE pipelineid = $1 ORDER BY id;", jobsTable)
 		jobsrows, err := database.Db.Query(jobsquery, pipelinedata.ID)
 		if err != nil {
 			return err
@@ -54,6 +54,7 @@ func QueryData(datas *Openshiftdashboard, pipelineTable string, jobsTable string
 				&jobsdata.Stage,
 				&jobsdata.Name,
 				&jobsdata.Ref,
+				&jobsdata.GithubReadme,
 				&jobsdata.CreatedAt,
 				&jobsdata.StartedAt,
 				&jobsdata.FinishedAt,
@@ -134,6 +135,7 @@ func releasePipelineJobs(pipelineID int, token string, project string) (Jobs, er
 func getPlatformData(token, project, branch, pipelineTable, jobTable string) {
 	var logURL string
 	var imageTag string
+	var getURLString string
 	pipelineData, err := getPipelineData(token, project, branch)
 	if err != nil {
 		glog.Error(err)
@@ -155,8 +157,6 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable string) {
 		if err != nil {
 			glog.Error(err)
 		}
-
-		glog.Infoln("releaseTagFuc Result : - > : ", imageTag)
 		// Add pipelines data to Database
 		sqlStatement := fmt.Sprintf("INSERT INTO %s (project, id, sha, ref, status, web_url, openshift_pid, kibana_url, release_tag) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"+
 			"ON CONFLICT (id) DO UPDATE SET status = $5, openshift_pid = $7, kibana_url = $8, release_tag = $9 RETURNING id;", pipelineTable)
@@ -179,8 +179,12 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable string) {
 
 		// Add pipeline jobs data to Database
 		for j := range pipelineJobsData {
-			sqlStatement := fmt.Sprintf("INSERT INTO %s (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"+
-				"ON CONFLICT (id) DO UPDATE SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9 RETURNING id;", jobTable)
+			getURLString, err = getURL(pipelineJobsData[j].WebURL, token)
+			if err != nil {
+				glog.Error("error in getting JobUrl", err)
+			}
+			sqlStatement := fmt.Sprintf("INSERT INTO %s (pipelineid, id, status, stage, name, ref, github_readme, created_at, started_at, finished_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"+
+				"ON CONFLICT (id) DO UPDATE SET status = $3, stage = $4, name = $5, ref = $6, created_at = $8, started_at = $9, finished_at = $10 RETURNING id;", jobTable)
 			id := 0
 			err = database.Db.QueryRow(sqlStatement,
 				pipelineData[i].ID,
@@ -189,6 +193,7 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable string) {
 				pipelineJobsData[j].Stage,
 				pipelineJobsData[j].Name,
 				pipelineJobsData[j].Ref,
+				getURLString,
 				pipelineJobsData[j].CreatedAt,
 				pipelineJobsData[j].StartedAt,
 				pipelineJobsData[j].FinishedAt,
@@ -236,6 +241,55 @@ func getImageTag(jobsData Jobs, token string) (string, error) {
 		}
 		releaseVersion := strings.Split(result[1], "\n")
 		return releaseVersion[0], nil
+	}
+	return "NA", nil
+}
+
+func getURL(jobsData string, token string) (string, error) {
+	var jobURL string
+	var baseURL string
+	var searchPlatform string
+	if strings.Contains(jobsData, "konvoy") {
+		baseURL = "https://github.com/mayadata-io/e2e-konvoy/tree/master/"
+		searchPlatform = "openebs-konvoy-e2e/"
+
+	} else if strings.Contains(jobsData, "openshift") {
+		baseURL = "https://github.com/mayadata-io/e2e-openshift/tree/master/"
+		searchPlatform = "Openshift-EE/"
+	} else {
+		return "NA", nil
+	}
+	jobURL = jobsData + "/raw"
+	req, err := http.NewRequest("GET", jobURL, nil)
+	if err != nil {
+		return "NA", err
+	}
+	req.Close = true
+	req.Header.Set("Connection", "close")
+	client := http.Client{
+		Timeout: time.Minute * time.Duration(1),
+	}
+	res, err := client.Do(req)
+	if err != nil {
+		return "NA", err
+	}
+	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
+	data := string(body)
+	if data == "" {
+		return "NA", err
+	}
+	re := regexp.MustCompile(searchPlatform + "[^ ]*")
+	value := re.FindString(data)
+	result := strings.Split(string(value), "\n")
+	if result != nil && len(result) > 1 {
+		if result[0] == "" {
+			return "NA", nil
+		}
+		resultSlice := strings.Split(string(result[0]), "/")
+		resultSlice[len(resultSlice)-1] = ""
+		url := strings.Join(resultSlice, "/")
+		return baseURL + url + "README.md", nil
 	}
 	return "NA", nil
 }

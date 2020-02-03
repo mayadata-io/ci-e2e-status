@@ -60,7 +60,7 @@ func createTable() {
 	}
 	// Create pipeline jobs table in database
 	for i := range pipelineJobs {
-		query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(pipelineid INT, id INT PRIMARY KEY,status VARCHAR, stage VARCHAR, name VARCHAR, ref VARCHAR, created_at VARCHAR, started_at VARCHAR, finished_at VARCHAR, message VARCHAR, author_name VARCHAR);", pipelineJobs[i])
+		query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(pipelineid INT, id INT PRIMARY KEY,status VARCHAR, stage VARCHAR, name VARCHAR, ref VARCHAR, github_readme VARCHAR, created_at VARCHAR, started_at VARCHAR, finished_at VARCHAR, message VARCHAR, author_name VARCHAR);", pipelineJobs[i])
 		value, err := Db.Query(query)
 		if err != nil {
 			glog.Error(err)
