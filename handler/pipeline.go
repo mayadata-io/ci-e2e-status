@@ -167,7 +167,7 @@ func pipelineData(token string) {
 				}
 				if pipelineJobsdata[j].Stage == "BASELINE" {
 					triggerTestPipeline, err = getTriggerPipelineFromBuild(pipelineJobsdata[j].ID, token, pipelinedata.ProjectID)
-					goPipeOep(token, triggerTestPipeline, pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID)
+					goPipeOep(token, triggerTestPipeline, pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha)
 					if err != nil {
 						glog.Error(err)
 					}
