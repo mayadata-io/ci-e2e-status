@@ -100,7 +100,7 @@ func OepQueryPipelineData(datas *dashboard) error {
 }
 
 // oepData from gitlab api for oep and dump to database
-func goPipeOep(token string, triggerID string, pA string, pE string, pM string, buildID int) {
+func goPipeOep(token string, triggerID string, pA string, pE string, pM string, buildID int, commitSha string) {
 	// query := fmt.Sprintf("SELECT project,id,author_name,author_email,commit_message FROM commit_detail ORDER BY id DESC FETCH FIRST 30 ROWS ONLY;")
 	// oepPipelineID, err := database.Db.Query(query)
 	// if err != nil {
@@ -137,7 +137,7 @@ func goPipeOep(token string, triggerID string, pA string, pE string, pM string, 
 	pipelineid := 0
 	err = database.Db.QueryRow(sqlStatement,
 		oepPipelineData.ID,
-		oepPipelineData.Sha,
+		commitSha,
 		oepPipelineData.Ref,
 		oepPipelineData.Status,
 		oepPipelineData.WebURL,
