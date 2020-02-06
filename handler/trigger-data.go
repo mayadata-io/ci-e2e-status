@@ -184,7 +184,7 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable string) {
 				glog.Error("error in getting JobUrl", err)
 			}
 			sqlStatement := fmt.Sprintf("INSERT INTO %s (pipelineid, id, status, stage, name, ref, github_readme, created_at, started_at, finished_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"+
-				"ON CONFLICT (id) DO UPDATE SET status = $3, stage = $4, name = $5, ref = $6, created_at = $8, started_at = $9, finished_at = $10 RETURNING id;", jobTable)
+				"ON CONFLICT (id) DO UPDATE SET status = $3, stage = $4, name = $5, ref = $6, github_readme = $7, created_at = $8, started_at = $9, finished_at = $10 RETURNING id;", jobTable)
 			id := 0
 			err = database.Db.QueryRow(sqlStatement,
 				pipelineData[i].ID,
