@@ -21,6 +21,7 @@ func main() {
 	http.HandleFunc("/packet/antepenultimate", handler.PacketHandlerAntepenultimate)
 	http.HandleFunc("/konvoy", handler.KonvoyHandler)
 	http.HandleFunc("/openshift/release", handler.OpenshiftHandlerReleasee)
+	http.HandleFunc("/about/faq", handler.FaqHandler)
 
 	glog.Infof("Listening on http://0.0.0.0:3000")
 
