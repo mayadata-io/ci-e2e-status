@@ -109,6 +109,7 @@ func percentageCoverageFunc(jobsData Jobs, token string) (string, error) {
 			jobURL = value.WebURL + "/raw"
 		}
 	}
+	glog.Infoln("Job url ----- > [ e2e- metrics ] :- ", jobURL)
 	req, err := http.NewRequest("GET", jobURL, nil)
 	if err != nil {
 		return "NA", err
