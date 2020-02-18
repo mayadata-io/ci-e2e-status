@@ -3,8 +3,12 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/mayadata-io/ci-e2e-status/database"
@@ -98,6 +102,45 @@ func OepQueryPipelineData(datas *dashboard) error {
 	}
 	return nil
 }
+func percentageCoverageFunc(jobsData Jobs, token string) (string, error) {
+	var jobURL string
+	for _, value := range jobsData {
+		if value.Name == "e2e-metrics" {
+			jobURL = value.WebURL + "/raw"
+		}
+	}
+	req, err := http.NewRequest("GET", jobURL, nil)
+	if err != nil {
+		return "NA", err
+	}
+	req.Close = true
+	req.Header.Set("Connection", "close")
+	client := http.Client{
+		Timeout: time.Minute * time.Duration(1),
+	}
+	res, err := client.Do(req)
+	if err != nil {
+		return "NA", err
+	}
+	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
+	data := string(body)
+	if data == "" {
+		return "NA", err
+	}
+	re := regexp.MustCompile("kubectl get em -n e2e-metrics[^ ]*")
+	value := re.FindString(data)
+	glog.Infoln("[] ------- [] -------- >>>>>>>>> : : ", string(value))
+	result := strings.Split(string(value), "=")
+	if result != nil && len(result) > 1 {
+		if result[1] == "" {
+			return "NA", nil
+		}
+		releaseVersion := strings.Split(result[1], "\n")
+		return releaseVersion[0], nil
+	}
+	return "NA", nil
+}
 
 // oepData from gitlab api for oep and dump to database
 func goPipeOep(token string, triggerID string, pA string, pE string, pM string, buildID int, commitSha string) {
@@ -130,6 +173,12 @@ func goPipeOep(token string, triggerID string, pA string, pE string, pM string, 
 		glog.Error(err)
 		return
 	}
+	percentageCoverage, err := percentageCoverageFunc(pipelineJobsdata, token)
+	if err != nil {
+		glog.Error(err)
+		return
+	}
+	glog.Infoln("-------->>>>>>>>>>>>>>>>>------- [] : ", percentageCoverage)
 
 	sqlStatement := fmt.Sprintf(`INSERT INTO oep_pipeline ( pipelineid, sha, ref, status, web_url, author_name, author_email, message, build_pipeline_id)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -149,7 +198,7 @@ func goPipeOep(token string, triggerID string, pA string, pE string, pM string, 
 	if err != nil {
 		glog.Error(err)
 	}
-	glog.Infoln("New record ID for uild Triggered OEP Pipeline:", oepPipelineData.ID)
+	glog.Infoln("New record ID for build Triggered OEP Pipeline:", oepPipelineData.ID)
 
 	// if pipelinedata.ID != 0 {
 	for j := range pipelineJobsdata {
