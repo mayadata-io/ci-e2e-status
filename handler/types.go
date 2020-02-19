@@ -110,6 +110,7 @@ type TriggredID struct {
 	AuthorName  string `json:"author_name"`
 	AuthorEmail string `json:"author_email"`
 	Message     string `json:"message"`
+	Percentage  string `json:"percentage_coverage"`
 }
 
 // pipelineSummary contains the details of a gitlab pipelines
@@ -124,6 +125,7 @@ type pipelineSummary struct {
 	AuthorName  string        `json:"author_name"`
 	AuthorEmail string        `json:"author_email"`
 	Message     string        `json:"message"`
+	Percentage  string        `json:"percentage_coverage"`
 	Jobs        []Jobssummary `json:"jobs"`
 }
 
