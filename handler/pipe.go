@@ -139,8 +139,7 @@ func goPipeOep(token string, triggerID string, pA string, pE string, pM string, 
 		pE,
 		pM,
 		buildID,
-		"blaaablaablaaaaaa",
-		// percentageCoverage,
+		percentageCoverage,
 	).Scan(&pipelineid)
 	if err != nil {
 		glog.Error(err)
