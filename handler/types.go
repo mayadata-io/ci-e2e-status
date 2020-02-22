@@ -124,6 +124,7 @@ type pipelineSummary struct {
 	AuthorName  string        `json:"author_name"`
 	AuthorEmail string        `json:"author_email"`
 	Message     string        `json:"message"`
+	Percentage  string        `json:"percentage_coverage"`
 	Jobs        []Jobssummary `json:"jobs"`
 }
 

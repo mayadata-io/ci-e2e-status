@@ -3,8 +3,12 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/mayadata-io/ci-e2e-status/database"
@@ -35,7 +39,7 @@ func OepPipelineHandler(w http.ResponseWriter, r *http.Request) {
 // OepQueryPipelineData fetch the pipeline data as well as jobs data form Packet table of database
 func OepQueryPipelineData(datas *dashboard) error {
 	// Select all data from packetpipeline table of DB
-	query := fmt.Sprintf("SELECT pipelineid,sha,ref,status,web_url,author_name,author_email,message FROM oep_pipeline ORDER BY build_pipeline_id DESC")
+	query := fmt.Sprintf("SELECT pipelineid,sha,ref,status,web_url,author_name,author_email,message,percentage_coverage FROM oep_pipeline ORDER BY build_pipeline_id DESC")
 	pipelinerows, err := database.Db.Query(query)
 	if err != nil {
 		return err
@@ -54,6 +58,7 @@ func OepQueryPipelineData(datas *dashboard) error {
 			&pipelinedata.AuthorName,
 			&pipelinedata.AuthorEmail,
 			&pipelinedata.Message,
+			&pipelinedata.Percentage,
 		)
 		if err != nil {
 			return err
@@ -101,23 +106,6 @@ func OepQueryPipelineData(datas *dashboard) error {
 
 // oepData from gitlab api for oep and dump to database
 func goPipeOep(token string, triggerID string, pA string, pE string, pM string, buildID int, commitSha string) {
-	// query := fmt.Sprintf("SELECT project,id,author_name,author_email,commit_message FROM commit_detail ORDER BY id DESC FETCH FIRST 30 ROWS ONLY;")
-	// oepPipelineID, err := database.Db.Query(query)
-	// if err != nil {
-	// 	glog.Error("OEP pipeline quering data Error:", err)
-	// 	return
-	// }
-	// for oepPipelineID.Next() {
-	// 	var logURL string
-	// 	pipelinedata := TriggredID{}
-	// 	err = oepPipelineID.Scan(
-	// 		&pipelinedata.ProjectID,
-	// 		&pipelinedata.ID,
-	// 		&pipelinedata.AuthorName,
-	// 		&pipelinedata.AuthorEmail,
-	// 		&pipelinedata.Message,
-	// 	)
-	// 	defer oepPipelineID.Close()
 	trID, err := strconv.Atoi(triggerID)
 	glog.Infoln("OEp triggered by build id :", trID)
 	oepPipelineData, err := oepPipeline(token, trID, 5)
@@ -130,10 +118,16 @@ func goPipeOep(token string, triggerID string, pA string, pE string, pM string, 
 		glog.Error(err)
 		return
 	}
+	percentageCoverage, err := percentageCoverageFunc(pipelineJobsdata, token)
+	if err != nil {
+		glog.Error(err)
+		return
+	}
+	glog.Infoln("-------->>>>>>>>>>>>>>>>>------- [] : ", percentageCoverage)
 
-	sqlStatement := fmt.Sprintf(`INSERT INTO oep_pipeline ( pipelineid, sha, ref, status, web_url, author_name, author_email, message, build_pipeline_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		 ON CONFLICT (build_pipeline_id) DO UPDATE SET pipelineid = $1, sha = $2, ref = $3, status = $4, web_url = $5 RETURNING build_pipeline_id;`)
+	sqlStatement := fmt.Sprintf(`INSERT INTO oep_pipeline ( pipelineid, sha, ref, status, web_url, author_name, author_email, message, build_pipeline_id, percentage_coverage)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		 ON CONFLICT (build_pipeline_id) DO UPDATE SET pipelineid = $1, sha = $2, ref = $3, status = $4, web_url = $5, percentage_coverage = $10 RETURNING build_pipeline_id;`)
 	pipelineid := 0
 	err = database.Db.QueryRow(sqlStatement,
 		oepPipelineData.ID,
@@ -145,11 +139,12 @@ func goPipeOep(token string, triggerID string, pA string, pE string, pM string, 
 		pE,
 		pM,
 		buildID,
+		percentageCoverage,
 	).Scan(&pipelineid)
 	if err != nil {
 		glog.Error(err)
 	}
-	glog.Infoln("New record ID for uild Triggered OEP Pipeline:", oepPipelineData.ID)
+	glog.Infoln("New record ID for build Triggered OEP Pipeline:", oepPipelineData.ID)
 
 	// if pipelinedata.ID != 0 {
 	for j := range pipelineJobsdata {
@@ -178,4 +173,50 @@ func goPipeOep(token string, triggerID string, pA string, pE string, pM string, 
 	}
 	// }
 	// }
+}
+
+func percentageCoverageFunc(jobsData Jobs, token string) (string, error) {
+	// var jobURL = "https://gitlab.mayadata.io/oep/oep-e2e-gcp/-/jobs/38871/raw"
+	var jobURL string
+	for _, value := range jobsData {
+		if value.Name == "e2e-metrics" {
+			jobURL = value.WebURL + "/raw"
+		}
+	}
+	glog.Infoln("-----percentageCoverageFunc----JobURL-----", jobURL)
+	if jobURL != "" {
+		glog.Infoln("Job url ----- > [ e2e- metrics ] :- ", jobURL)
+		req, err := http.NewRequest("GET", jobURL, nil)
+		if err != nil {
+			return "NA", err
+		}
+		req.Close = true
+		req.Header.Set("Connection", "close")
+		client := http.Client{
+			Timeout: time.Minute * time.Duration(1),
+		}
+		res, err := client.Do(req)
+		if err != nil {
+			return "NA", err
+		}
+		defer res.Body.Close()
+		body, _ := ioutil.ReadAll(res.Body)
+		data := string(body)
+		if data == "" {
+			return "NA", err
+		}
+		re := regexp.MustCompile("coverage: [^ ]*")
+		value := re.FindString(data)
+		result := strings.Split(string(value), ":")
+		if result != nil && len(result) > 1 {
+			if result[1] == "" {
+				return "NA", nil
+			}
+			// releaseVersion := strings.Split(result[1], "\n")
+			releaseVersion := result[1]
+			return releaseVersion, nil
+		}
+		return "NA", nil
+	}
+	return "NA", nil
 }
