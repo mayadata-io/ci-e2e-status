@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -217,17 +217,20 @@ func getTriggerPipelineFromBuild(jobid int, token string, proID int) (string, er
 	if data == "" {
 		return "0", nil
 	}
-	grep := exec.Command("grep", "-oP", "(?<=master)[^ ]*")
-	ps := exec.Command("echo", data)
+	// grep := exec.Command("grep", "-oP", "(?<=master)[^ ]*")
+	// ps := exec.Command("echo", data)
 
-	// Get ps's stdout and attach it to grep's stdin.
-	pipe, _ := ps.StdoutPipe()
-	defer pipe.Close()
-	grep.Stdin = pipe
-	ps.Start()
+	// // Get ps's stdout and attach it to grep's stdin.
+	// pipe, _ := ps.StdoutPipe()
+	// defer pipe.Close()
+	// grep.Stdin = pipe
+	// ps.Start()
 
-	// Run and get the output of grep.
-	value, _ := grep.Output()
+	// // Run and get the output of grep.
+	// value, _ := grep.Output()
+
+	re := regexp.MustCompile("master[^ ]*")
+	value := re.FindString(data)
 	if string(value) == "" {
 		return "0", nil
 	}
