@@ -32,7 +32,7 @@ func CommitHandler(w http.ResponseWriter, r *http.Request) {
 
 func commitData(token string) {
 	repo := []int{1, 6, 14, 15, 16, 17, 18}
-	// repo := []int{6}
+	// repo := []int{1}
 
 	for _, repo := range repo {
 		pipelineData, err := pipelineDataa(repo, token)

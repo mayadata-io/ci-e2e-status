@@ -46,7 +46,7 @@ func InitDb() {
 
 // createTable in database if not abvailable
 func createTable() {
-
+	platforms := []string{"oep", "konvoy", "rancher"}
 	// create build pipelines table for build related r/w operation
 	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS commit_detail(project INT, id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, CommittedDate VARCHAR, author_name VARCHAR, author_email VARCHAR, comitter_name VARCHAR, commit_title VARCHAR, commit_message VARCHAR);")
 	value, err := Db.Query(query)
@@ -68,20 +68,22 @@ func createTable() {
 		glog.Error(err)
 	}
 	defer value.Close()
-	// create build pipeline jobs table in database
-	query = fmt.Sprintf("CREATE TABLE IF NOT EXISTS oep_pipeline(projectid INT, pipelineid INT, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, kibana_url VARCHAR, started_at VARCHAR, finished_at VARCHAR, author_name VARCHAR, author_email VARCHAR, message VARCHAR, build_pipeline_id INT PRIMARY KEY, percentage_coverage VARCHAR);")
-	value, err = Db.Query(query)
-	if err != nil {
-		glog.Error(err)
+	for _, platform := range platforms {
+		// create build pipeline jobs table in database
+		query = fmt.Sprintf("CREATE TABLE IF NOT EXISTS " + platform + "_pipeline(projectid INT, pipelineid INT, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, kibana_url VARCHAR, started_at VARCHAR, finished_at VARCHAR, author_name VARCHAR, author_email VARCHAR, message VARCHAR, build_pipeline_id INT PRIMARY KEY, percentage_coverage VARCHAR);")
+		value, err = Db.Query(query)
+		if err != nil {
+			glog.Error(err)
+		}
+		defer value.Close()
+		//create pipelines jobs table
+		query = fmt.Sprintf("CREATE TABLE IF NOT EXISTS " + platform + "_pipeline_jobs(pipelineid INT, id INT PRIMARY KEY,status VARCHAR, stage VARCHAR, name VARCHAR, ref VARCHAR, created_at VARCHAR, started_at VARCHAR, finished_at VARCHAR, job_log_url VARCHAR);")
+		value, err = Db.Query(query)
+		if err != nil {
+			glog.Error(err)
+		}
+		defer value.Close()
 	}
-	defer value.Close()
-	//create pipelines jobs table
-	query = fmt.Sprintf("CREATE TABLE IF NOT EXISTS oep_pipeline_jobs(pipelineid INT, id INT PRIMARY KEY,status VARCHAR, stage VARCHAR, name VARCHAR, ref VARCHAR, created_at VARCHAR, started_at VARCHAR, finished_at VARCHAR, job_log_url VARCHAR);")
-	value, err = Db.Query(query)
-	if err != nil {
-		glog.Error(err)
-	}
-	defer value.Close()
 }
 
 // dbConfig get config from environment variable
