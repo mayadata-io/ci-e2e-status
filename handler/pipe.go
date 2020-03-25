@@ -14,10 +14,6 @@ import (
 	"github.com/mayadata-io/ci-e2e-status/database"
 )
 
-// func goPipeOep(token string, triggerId string) {
-// 	glog.Infoln("------token-------", token, triggerId)
-// }
-
 // OepPipelineHandler return packet pipeline data to /packet path
 func OepPipelineHandler(w http.ResponseWriter, r *http.Request) {
 	// Allow cross origin request
@@ -123,7 +119,6 @@ func goPipeOep(token string, triggerID string, pA string, pE string, pM string, 
 		glog.Error(err)
 		return
 	}
-	// glog.Infoln("-------->>>>>>>>>>>>>>>>>------- [] : ", percentageCoverage)
 
 	sqlStatement := fmt.Sprintf(`INSERT INTO ` + platform + `_pipeline ( pipelineid, sha, ref, status, web_url, author_name, author_email, message, build_pipeline_id, percentage_coverage)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
@@ -183,9 +178,7 @@ func percentageCoverageFunc(jobsData Jobs, token string) (string, error) {
 			jobURL = value.WebURL + "/raw"
 		}
 	}
-	// glog.Infoln("-----percentageCoverageFunc----JobURL-----", jobURL)
 	if jobURL != "" {
-		// glog.Infoln("Job url ----- > [ e2e- metrics ] :- ", jobURL)
 		req, err := http.NewRequest("GET", jobURL, nil)
 		if err != nil {
 			return "NA", err
@@ -212,7 +205,6 @@ func percentageCoverageFunc(jobsData Jobs, token string) (string, error) {
 			if result[1] == "" {
 				return "NA", nil
 			}
-			// releaseVersion := strings.Split(result[1], "\n")
 			releaseVersion := result[1]
 			return releaseVersion, nil
 		}

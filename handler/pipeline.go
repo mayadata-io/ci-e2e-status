@@ -158,9 +158,7 @@ func pipelineData(token string) {
 		if pipelinedata.ID != 0 {
 			for j := range pipelineJobsdata {
 				// var jobLogURL string
-				var TriggeredGCP string
-				var TriggeredKonvoy string
-				var TriggeredRancher string
+				var TriggeredGCP, TriggeredKonvoy, TriggeredRancher string
 
 				sqlStatement := fmt.Sprintf("INSERT INTO oep_build_jobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, job_log_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)" +
 					"ON CONFLICT (id) DO UPDATE SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9, job_log_url = $10 RETURNING id;")
@@ -177,7 +175,6 @@ func pipelineData(token string) {
 							if err != nil {
 								glog.Error(err)
 							}
-							// glog.Infoln("stage Baseline ", TriggeredGCP)
 						} else if pipelineJobsdata[j].Name == "konvoy-e2e" {
 							TriggeredKonvoy, err = getTriggerPipelineFromBuild(pipelineJobsdata[j].ID, token, pipelinedata.ProjectID)
 							goPipeOep(token, TriggeredKonvoy, pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "konvoy", 37)
@@ -191,7 +188,6 @@ func pipelineData(token string) {
 							if err != nil {
 								glog.Error(err)
 							}
-							// glog.Infoln("Konvoy-pipeline-trigger", TriggeredRancher)
 						} else {
 							goPipeOep(token, "dummy", pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "dummy", 0)
 						}
@@ -202,7 +198,6 @@ func pipelineData(token string) {
 							if err != nil {
 								glog.Error(err)
 							}
-							// glog.Infoln("stage Baseline ", TriggeredGCP)
 						}
 
 						goPipeOep(token, "dummy", pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "konvoy", 0)
@@ -271,7 +266,6 @@ func getTriggerPipelineFromBuild(jobid int, token string, proID int) (string, er
 	}
 	result := strings.Split(string(value), "\"")
 	result = strings.Split(string(result[8]), "/")
-	// glog.Infoln("uild triggered URL ", result)
 	if result[6] == "" {
 		return "0", nil
 	}
