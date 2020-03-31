@@ -158,22 +158,52 @@ func pipelineData(token string) {
 		if pipelinedata.ID != 0 {
 			for j := range pipelineJobsdata {
 				// var jobLogURL string
-				var triggerTestPipeline string
+				var TriggeredGCP, TriggeredKonvoy, TriggeredRancher string
+
 				sqlStatement := fmt.Sprintf("INSERT INTO oep_build_jobs (pipelineid, id, status, stage, name, ref, created_at, started_at, finished_at, job_log_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)" +
 					"ON CONFLICT (id) DO UPDATE SET status = $3, stage = $4, name = $5, ref = $6, created_at = $7, started_at = $8, finished_at = $9, job_log_url = $10 RETURNING id;")
 				id := 0
 				if len(pipelineJobsdata) != 0 {
 					// jobLogURL = Kibanaloglink(oepPipelineData.Sha, oepPipelineData.ID, oepPipelineData.Status, pipelineJobsdata[j].StartedAt, pipelineJobsdata[j].FinishedAt)
 				}
-				if pipelineJobsdata[j].Stage == "BASELINE" {
-					triggerTestPipeline, err = getTriggerPipelineFromBuild(pipelineJobsdata[j].ID, token, pipelinedata.ProjectID)
-					goPipeOep(token, triggerTestPipeline, pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha)
-					if err != nil {
-						glog.Error(err)
+				if pipelineJobsdata[j].Stage == "BASELINE" || pipelineJobsdata[j].Stage == "TRIGGER-E2E" {
+					glog.Infoln("baseline stage job : = -  [ ", len(pipelineJobsdata), " ] ", pipelineJobsdata[j].Name)
+					if len(pipelineJobsdata) == 4 {
+						if pipelineJobsdata[j].Name == "baseline-image" || pipelineJobsdata[j].Name == "gcp-e2e" {
+							TriggeredGCP, err = getTriggerPipelineFromBuild(pipelineJobsdata[j].ID, token, pipelinedata.ProjectID)
+							goPipeOep(token, TriggeredGCP, pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "oep", 5)
+							if err != nil {
+								glog.Error(err)
+							}
+						} else if pipelineJobsdata[j].Name == "konvoy-e2e" {
+							TriggeredKonvoy, err = getTriggerPipelineFromBuild(pipelineJobsdata[j].ID, token, pipelinedata.ProjectID)
+							goPipeOep(token, TriggeredKonvoy, pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "konvoy", 37)
+							if err != nil {
+								glog.Error(err)
+							}
+							glog.Infoln("Konvoy-pipeline-trigger", TriggeredKonvoy)
+						} else if pipelineJobsdata[j].Name == "rancher-e2e" {
+							TriggeredRancher, err = getTriggerPipelineFromBuild(pipelineJobsdata[j].ID, token, pipelinedata.ProjectID)
+							goPipeOep(token, TriggeredRancher, pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "rancher", 36)
+							if err != nil {
+								glog.Error(err)
+							}
+						} else {
+							goPipeOep(token, "dummy", pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "dummy", 0)
+						}
+					} else {
+						if pipelineJobsdata[j].Name == "baseline-image" {
+							TriggeredGCP, err = getTriggerPipelineFromBuild(pipelineJobsdata[j].ID, token, pipelinedata.ProjectID)
+							goPipeOep(token, TriggeredGCP, pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "oep", 5)
+							if err != nil {
+								glog.Error(err)
+							}
+						}
+
+						goPipeOep(token, "dummy", pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "konvoy", 0)
+						goPipeOep(token, "dummy", pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "rancher", 0)
+
 					}
-					glog.Infoln("stage Baseline ", triggerTestPipeline)
-				} else {
-					triggerTestPipeline = "n/a"
 				}
 				err = database.Db.QueryRow(sqlStatement,
 					oepPipelineData.ID,
@@ -185,7 +215,7 @@ func pipelineData(token string) {
 					pipelineJobsdata[j].CreatedAt,
 					pipelineJobsdata[j].StartedAt,
 					pipelineJobsdata[j].FinishedAt,
-					triggerTestPipeline,
+					TriggeredGCP,
 				).Scan(&id)
 				if err != nil {
 					glog.Error(err)
@@ -236,7 +266,6 @@ func getTriggerPipelineFromBuild(jobid int, token string, proID int) (string, er
 	}
 	result := strings.Split(string(value), "\"")
 	result = strings.Split(string(result[8]), "/")
-	glog.Infoln("uild triggered URL ", result)
 	if result[6] == "" {
 		return "0", nil
 	}
