@@ -313,7 +313,7 @@ func oepPipelineJobs(pipelineID int, token string, projectID int) (Jobs, error) 
 	if pipelineID == 0 {
 		return nil, nil
 	}
-	url := BaseURL + "api/v4/projects/" + strconv.Itoa(projectID) + "/pipelines/" + strconv.Itoa(pipelineID) + "/jobs?per_page=50"
+	url := BaseURL + "api/v4/projects/" + strconv.Itoa(projectID) + "/pipelines/" + strconv.Itoa(pipelineID) + "/jobs?per_page=75"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
