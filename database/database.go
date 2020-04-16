@@ -46,7 +46,7 @@ func InitDb() {
 
 // createTable in database if not abvailable
 func createTable() {
-	platforms := []string{"oep", "konvoy", "rancher"}
+	platforms := []string{"oep", "konvoy", "rancher", "aws"}
 	// create build pipelines table for build related r/w operation
 	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS commit_detail(project INT, id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, CommittedDate VARCHAR, author_name VARCHAR, author_email VARCHAR, comitter_name VARCHAR, commit_title VARCHAR, commit_message VARCHAR);")
 	value, err := Db.Query(query)

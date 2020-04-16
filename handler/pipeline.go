@@ -168,7 +168,26 @@ func pipelineData(token string) {
 				}
 				if pipelineJobsdata[j].Stage == "BASELINE" || pipelineJobsdata[j].Stage == "TRIGGER-E2E" {
 					glog.Infoln("baseline stage job : = -  [ ", len(pipelineJobsdata), " ] ", pipelineJobsdata[j].Name)
-					if len(pipelineJobsdata) == 4 {
+					if len(pipelineJobsdata) == 3 {
+						if pipelineJobsdata[j].Name == "aws-e2e" {
+							TriggeredGCP, err = getTriggerPipelineFromBuild(pipelineJobsdata[j].ID, token, pipelinedata.ProjectID)
+							goPipeOep(token, TriggeredGCP, pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "aws", 39)
+							// to show the empty data of konvoy and rancher
+							goPipeOep(token, "dummy", pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "konvoy", 0)
+							goPipeOep(token, "dummy", pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "rancher", 0)
+							if err != nil {
+								glog.Error(err)
+							}
+						} else if pipelineJobsdata[j].Name == "baseline-image" || pipelineJobsdata[j].Name == "gcp-e2e" || pipelineJobsdata[j].Name == "gcp-e2e" {
+							TriggeredGCP, err = getTriggerPipelineFromBuild(pipelineJobsdata[j].ID, token, pipelinedata.ProjectID)
+							goPipeOep(token, TriggeredGCP, pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "oep", 5)
+							if err != nil {
+								glog.Error(err)
+							}
+						} else {
+							goPipeOep(token, "dummy", pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "dummy", 0)
+						}
+					} else if len(pipelineJobsdata) == 4 {
 						if pipelineJobsdata[j].Name == "baseline-image" || pipelineJobsdata[j].Name == "gcp-e2e" {
 							TriggeredGCP, err = getTriggerPipelineFromBuild(pipelineJobsdata[j].ID, token, pipelinedata.ProjectID)
 							goPipeOep(token, TriggeredGCP, pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "oep", 5)
@@ -183,6 +202,8 @@ func pipelineData(token string) {
 							}
 							glog.Infoln("Konvoy-pipeline-trigger", TriggeredKonvoy)
 						} else if pipelineJobsdata[j].Name == "rancher-e2e" {
+							// adding AWS as empty data or dummy data for previous pipelines
+							goPipeOep(token, "dummy", pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "aws", 0)
 							TriggeredRancher, err = getTriggerPipelineFromBuild(pipelineJobsdata[j].ID, token, pipelinedata.ProjectID)
 							goPipeOep(token, TriggeredRancher, pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "rancher", 36)
 							if err != nil {
@@ -201,6 +222,7 @@ func pipelineData(token string) {
 						}
 
 						goPipeOep(token, "dummy", pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "konvoy", 0)
+						goPipeOep(token, "dummy", pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "aws", 0)
 						goPipeOep(token, "dummy", pipelinedata.AuthorName, pipelinedata.AuthorEmail, pipelinedata.Message, oepPipelineData.ID, oepPipelineData.Sha, "rancher", 0)
 
 					}
