@@ -10,7 +10,7 @@ import (
 // FaqHandler print readme content in /faq endpoint
 func FaqHandler(w http.ResponseWriter, r *http.Request) {
 
-	url := "https://raw.githubusercontent.com/mayadata-io/ci-e2e-dashboard/staging/README.md"
+	url := "https://raw.githubusercontent.com/mayadata-io/ci-e2e-dashboard/staging/Docs/overview.md"
 	response, err := http.Get(url)
 	if err != nil {
 		log.Fatal(err)
