@@ -6,13 +6,13 @@ RUN go get github.com/golang/glog
 
 RUN mkdir /app
 
-RUN mkdir $GOPATH/src/github.com/openebs
+RUN mkdir $GOPATH/src/github.com/mayadata-io
 
-RUN mkdir $GOPATH/src/github.com/openebs/ci-e2e-status
+RUN mkdir $GOPATH/src/github.com/mayadata-io/ci-e2e-status
 
-ADD . $GOPATH/src/github.com/openebs/ci-e2e-status
+ADD . $GOPATH/src/github.com/mayadata-io/ci-e2e-status
 
-WORKDIR $GOPATH/src/github.com/openebs/ci-e2e-status
+WORKDIR $GOPATH/src/github.com/mayadata-io/ci-e2e-status
 
 RUN go build -o /app/main .
 

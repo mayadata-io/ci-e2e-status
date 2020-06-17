@@ -2,11 +2,13 @@ package handler
 
 // PlatformID assignment from gitlab repository
 const (
-	PACKETID = "27"
-	MAYAID   = "7"
-	JIVAID   = "6"
-	ISTGTID  = "5"
-	ZFSID    = "8"
+	PACKETID    = "27"
+	KONVOYID    = "34"
+	OPENSHIFTID = "36"
+	MAYAID      = "7"
+	JIVAID      = "6"
+	ISTGTID     = "5"
+	ZFSID       = "8"
 )
 
 // BranchName assignment from gitlab repository
@@ -15,7 +17,7 @@ const (
 	MAYABRANCH  = "master"
 	JIVABRANCH  = "master"
 	ISTGTBRANCH = "replication"
-	ZFSBRANCH   = "zfs-0.7-release"
+	ZFSBRANCH   = "develop"
 )
 
 var project string
@@ -56,6 +58,7 @@ type Jobs []struct {
 	CreatedAt  string `json:"created_at"`
 	StartedAt  string `json:"started_at"`
 	FinishedAt string `json:"finished_at"`
+	WebURL     string `json:"web_url"`
 }
 
 // Jobssummary struct
@@ -69,6 +72,7 @@ type Jobssummary struct {
 	CreatedAt  string `json:"created_at"`
 	StartedAt  string `json:"started_at"`
 	FinishedAt string `json:"finished_at"`
+	JobLogURL  string `json:"job_log_url"`
 }
 
 // TriggredID contains the details of a gitlab pipelines
@@ -113,17 +117,16 @@ type BuildJobs []struct {
 
 // BuildJobssummary contains the details of builds job for database
 type BuildJobssummary struct {
-	PipelineID int    `json:"pipelineid"`
-	ID         int    `json:"id"`
-	Status     string `json:"status"`
-	Stage      string `json:"stage"`
-	Name       string `json:"name"`
-	Ref        string `json:"ref"`
-	CreatedAt  string `json:"created_at"`
-	StartedAt  string `json:"started_at"`
-	FinishedAt string `json:"finished_at"`
-	Message    string `json:"message"`
-	AuthorName string `json:"author_name"`
+	PipelineID   int    `json:"pipelineid"`
+	ID           int    `json:"id"`
+	Status       string `json:"status"`
+	Stage        string `json:"stage"`
+	Name         string `json:"name"`
+	Ref          string `json:"ref"`
+	GithubReadme string `json:"github_readme"`
+	CreatedAt    string `json:"created_at"`
+	StartedAt    string `json:"started_at"`
+	FinishedAt   string `json:"finished_at"`
 }
 
 // BuildpipelineSummary contains the details of a builds pipelines
@@ -134,13 +137,33 @@ type BuildpipelineSummary struct {
 	Ref          string             `json:"ref"`
 	Status       string             `json:"status"`
 	WebURL       string             `json:"web_url"`
-	PacketV11PID string             `json:"packet_v11_pid"`
-	PacketV12PID string             `json:"packet_v12_pid"`
+	PacketV15PID string             `json:"packet_v15_pid"`
+	PacketV14PID string             `json:"packet_v14_pid"`
 	PacketV13PID string             `json:"packet_v13_pid"`
+	KonvoyPID    string             `json:"konvoy_pid"`
 	Jobs         []BuildJobssummary `json:"jobs"`
 }
 
 // Builddashboard contains the details related to builds
 type Builddashboard struct {
 	Dashboard []BuildpipelineSummary `json:"dashboard"`
+}
+
+// OpenshiftpipelineSummary contains the details of a openshifts pipelines
+type OpenshiftpipelineSummary struct {
+	Project      string             `json:"project"`
+	ID           int                `json:"id"`
+	Sha          string             `json:"sha"`
+	Ref          string             `json:"ref"`
+	Status       string             `json:"status"`
+	WebURL       string             `json:"web_url"`
+	OpenshiftPID string             `json:"openshift_pid"`
+	LogURL       string             `json:"kibana_url" `
+	ReleaseTag   string             `json:"release_tag"`
+	Jobs         []BuildJobssummary `json:"jobs"`
+}
+
+// Openshiftdashboard contains the details related to openshifts
+type Openshiftdashboard struct {
+	Dashboard []OpenshiftpipelineSummary `json:"dashboard"`
 }
