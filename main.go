@@ -22,6 +22,7 @@ func main() {
 	http.HandleFunc("/konvoy", handler.KonvoyHandler)
 	http.HandleFunc("/openshift/release", handler.OpenshiftHandlerReleasee)
 	http.HandleFunc("/about/faq", handler.FaqHandler)
+	http.HandleFunc("/nativek8s", handler.Nativek8sHandler)
 
 	glog.Infof("Listening on http://0.0.0.0:3000")
 

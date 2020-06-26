@@ -25,6 +25,7 @@ func UpdateDatabase() {
 	}
 	go getPlatformData(token, KONVOYID, "release-branch", "konvoy_pipeline", "konvoy_jobs")                // e2e-konvoy
 	go getPlatformData(token, OPENSHIFTID, "release-branch", "release_pipeline_data", "release_jobs_data") //e2e-openshift
+	go getPlatformData(token, NATIVEK8SID, "release-branch", "nativek8s_pipeline", "nativek8s_jobs")       //e2e-openshift
 
 	// loop will iterate at every 2nd minute and update the database
 	tick := time.Tick(2 * time.Minute)
@@ -38,6 +39,7 @@ func UpdateDatabase() {
 		}
 		go getPlatformData(token, KONVOYID, "release-branch", "konvoy_pipeline", "konvoy_jobs")                // e2e-konvoy
 		go getPlatformData(token, OPENSHIFTID, "release-branch", "release_pipeline_data", "release_jobs_data") //e2e-openshift
+		go getPlatformData(token, NATIVEK8SID, "release-branch", "nativek8s_pipeline", "nativek8s_jobs")       //e2e-openshift
 	}
 
 }

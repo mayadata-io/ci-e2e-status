@@ -47,8 +47,8 @@ func InitDb() {
 // createTable in database if not abvailable
 func createTable() {
 	// Create platform, pipeline and job table
-	pipeline := []string{"packet_pipeline_k8s_ultimate", "packet_pipeline_k8s_penultimate", "packet_pipeline_k8s_antepenultimate", "konvoy_pipeline", "release_pipeline_data"}
-	pipelineJobs := []string{"packet_jobs_k8s_ultimate", "packet_jobs_k8s_penultimate", "packet_jobs_k8s_antepenultimate", "konvoy_jobs", "release_jobs_data"}
+	pipeline := []string{"packet_pipeline_k8s_ultimate", "packet_pipeline_k8s_penultimate", "packet_pipeline_k8s_antepenultimate", "konvoy_pipeline", "release_pipeline_data", "nativek8s_pipeline"}
+	pipelineJobs := []string{"packet_jobs_k8s_ultimate", "packet_jobs_k8s_penultimate", "packet_jobs_k8s_antepenultimate", "konvoy_jobs", "release_jobs_data", "nativek8s_jobs"}
 	// Create pipeline table in database
 	for i := range pipeline {
 		query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(project VARCHAR, id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, openshift_pid VARCHAR, kibana_url VARCHAR, release_tag VARCHAR);", pipeline[i])

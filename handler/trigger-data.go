@@ -213,6 +213,9 @@ func getImageTag(jobsData Jobs, token string) (string, error) {
 			jobURL = value.WebURL + "/raw"
 		}
 	}
+	if jobURL == "" {
+		return "NoReleaseJobPresent", nil
+	}
 	req, err := http.NewRequest("GET", jobURL, nil)
 	if err != nil {
 		return "NA", err
