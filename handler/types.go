@@ -9,6 +9,7 @@ const (
 	JIVAID      = "6"
 	ISTGTID     = "5"
 	ZFSID       = "8"
+	NATIVEK8SID = "43"
 )
 
 // BranchName assignment from gitlab repository
