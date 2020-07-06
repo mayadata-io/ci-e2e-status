@@ -16,7 +16,7 @@ import (
 
 // QueryData fetches the builddashboard data from the db
 func QueryData(datas *Openshiftdashboard, pipelineTable string, jobsTable string) error {
-	pipelineQuery := fmt.Sprintf("SELECT * FROM %s ORDER BY id DESC;", pipelineTable)
+	pipelineQuery := fmt.Sprintf("SELECT * FROM %s ORDER BY id DESC LIMIT 20;", pipelineTable)
 	pipelinerows, err := database.Db.Query(pipelineQuery)
 	if err != nil {
 		return err
