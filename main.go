@@ -23,6 +23,7 @@ func main() {
 	http.HandleFunc("/openshift/release", handler.OpenshiftHandlerReleasee)
 	http.HandleFunc("/about/faq", handler.FaqHandler)
 	http.HandleFunc("/nativek8s", handler.Nativek8sHandler)
+	http.HandleFunc("/delete/pipeline", handler.DeletePipeline)
 
 	glog.Infof("Listening on http://0.0.0.0:3000")
 
