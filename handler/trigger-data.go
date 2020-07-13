@@ -209,7 +209,7 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable string) {
 func getImageTag(jobsData Jobs, token string) (string, error) {
 	var jobURL string
 	for _, value := range jobsData {
-		if value.Name == "K9YC-OpenEBS" || value.Name == "openebs-deploy" || value.Name == "XJGT-OPENEBS-KONVOY-DEPLOY" || value.Name == "ZFS-LocalPV PROVISIONER" {
+		if value.Name == "K9YC-OpenEBS" || value.Name == "openebs-deploy" || value.Name == "XJGT-OPENEBS-KONVOY-DEPLOY" || value.Name == "ZFS-LocalPV PROVISIONER" || value.Name == "ZFS-LOCALPV-PROVISIONER-DEPLOY" {
 			jobURL = value.WebURL + "/raw"
 		}
 	}
