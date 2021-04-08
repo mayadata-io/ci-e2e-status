@@ -1,5 +1,5 @@
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -19,19 +19,19 @@ spec:
       containers:
       - env:
         - name: TOKEN
-          value: ""
+          value: "E63xGAKPbh6wsWJGguyf"
         - name: DBHOST
-          value: "pgset-primary"
+          value: "http://10.100.218.232"
         - name: DBPORT
           value: "5432"
         - name: DBUSER
           value: "postgres"
         - name: DBPASS
-          value: "password"
+          value: "2xWho5W0Zz"
         - name: DBNAME
           value: "postgres"
         name: openebs-ci-backend
-        image: openebs/ci-database:latest
+        image: bhaskarjb/ci-e2e-dash-backend:1
         imagePullPolicy: Always
         ports:
           - containerPort: 3000

@@ -141,6 +141,7 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable string) {
 		glog.Error(err)
 		return
 	}
+	glog.Infoln("\n\n pipelineData : \t", pipelineData)
 	for i := range pipelineData {
 		pipelineJobsData, err := releasePipelineJobs(pipelineData[i].ID, token, project)
 		if err != nil {
