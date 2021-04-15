@@ -43,12 +43,13 @@ func UpdateDatabase() {
 				b := strings.Replace(branch, "_", "-", -1)
 				pipelineTable := fmt.Sprintf("%s_%s", platform, branch)
 				pipelineTableJobs := fmt.Sprintf("%s_jobs", pipelineTable)
-				// glog.Infoln(fmt.Sprintf("\n branch: %s \n pipelineTableJobs : %s \n  Token : %s \n ", b, pipelineTableJobs, token))
-				switch platform {
-				case "openshift":
-					go getPlatformData(token, OPENSHIFTID, b, pipelineTable, pipelineTableJobs)
-				case "konvoy":
-					go getPlatformData(token, KONVOYID, b, pipelineTable, pipelineTableJobs)
+				if gitLabStatus(BaseURL) {
+					switch platform {
+					case "openshift":
+						go getPlatformData(token, OPENSHIFTID, b, pipelineTable, pipelineTableJobs)
+					case "konvoy":
+						go getPlatformData(token, KONVOYID, b, pipelineTable, pipelineTableJobs)
+					}
 				}
 
 			}

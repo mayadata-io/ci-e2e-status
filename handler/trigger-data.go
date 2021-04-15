@@ -141,7 +141,7 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable string) {
 		glog.Error(err)
 		return
 	}
-	glog.Infoln("\n\n pipelineData : \t", pipelineData)
+	// glog.Infoln("\n\n pipelineData : \t", pipelineData)
 	for i := range pipelineData {
 		pipelineJobsData, err := releasePipelineJobs(pipelineData[i].ID, token, project)
 		if err != nil {
@@ -154,10 +154,11 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable string) {
 			JobFinishedAt := pipelineJobsData[len(pipelineJobsData)-1].FinishedAt
 			logURL = Kibanaloglink(pipelineData[i].Sha, pipelineData[i].ID, pipelineData[i].Status, jobStartedAt, JobFinishedAt)
 		}
-		imageTag, err = getImageTag(pipelineJobsData, token)
+		imageTag, err = getImageTag(pipelineJobsData, token, project, branch)
 		if err != nil {
 			glog.Error(err)
 		}
+		// glog.Infoln(fmt.Sprintf("\n\n\n ImageTag : %s \n\n\n", imageTag))
 		// Add pipelines data to Database
 		sqlStatement := fmt.Sprintf("INSERT INTO %s (project, id, sha, ref, status, web_url, openshift_pid, kibana_url, release_tag) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"+
 			"ON CONFLICT (id) DO UPDATE SET status = $5, openshift_pid = $7, kibana_url = $8, release_tag = $9 RETURNING id;", pipelineTable)
@@ -206,11 +207,41 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable string) {
 		}
 	}
 }
+func getImageTagJob(p, b string) string {
+	// switch p {
+	if p == "36" { //for openshift
+		switch b {
+		case "openebs-cstor":
+			return "K9YC-OpenEBS"
+		case "openebs-jiva":
+			return "K9YC-OpenEBS"
+		case "openebs-cstor-csi":
+			return "AAO9-CSTOR-OPERATOR"
+		case "jiva-operator":
+		}
+	} else if p == "34" { //for konvoy
+		switch b {
+		case "openebs-cstor":
+			return "2IC01-OPENEBS-KONVOY-DEPLOY"
+		case "openebs-jiva":
+			return "2JP01-OPENEBS-KONVOY-DEPLOY"
+		case "openebs-cstor-csi":
+			return "2ICO01-CSTOR-OPERATOR"
+		case "jiva-operator":
+			return "NA" // not yet done
+		}
+	} else {
+		return "NA"
+	}
+	return "NA"
+}
 
-func getImageTag(jobsData Jobs, token string) (string, error) {
-	var jobURL string
+func getImageTag(jobsData Jobs, token, project, branch string) (string, error) {
+	var jobURL, tagJob string
+	tagJob = getImageTagJob(project, branch)
+	glog.Infoln(fmt.Sprintf("\n platform : %s \n branch : %s \n tagJob : %s \n", project, branch, tagJob))
 	for _, value := range jobsData {
-		if value.Name == "K9YC-OpenEBS" || value.Name == "openebs-deploy" || value.Name == "XJGT-OPENEBS-KONVOY-DEPLOY" || value.Name == "2P01-ZFS-LOCALPV-PROVISIONER-DEPLOY" {
+		if value.Name == tagJob {
 			jobURL = value.WebURL + "/raw"
 		}
 	}

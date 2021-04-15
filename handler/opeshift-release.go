@@ -12,6 +12,7 @@ import (
 
 // OpenshiftHandlerReleasee return eks pipeline data to /build path
 func OpenshiftHandlerReleasee(w http.ResponseWriter, r *http.Request) {
+	// Allow cross origin request
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers:", "Origin, Content-Type, X-Auth-Token, Authorization")
@@ -24,12 +25,6 @@ func OpenshiftHandlerReleasee(w http.ResponseWriter, r *http.Request) {
 
 	pipelineTable := fmt.Sprintf("%s_%s", platform, branch)
 	pipelineTableJob := fmt.Sprintf("%s_jobs", pipelineTable)
-	// Allow cross origin request
-	// (w).Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers:", "Origin, Content-Type, X-Auth-Token, Authorization")
-	w.Header().Set("Content-Type", "application/json")
 	datas := Openshiftdashboard{}
 	err := QueryData(&datas, pipelineTable, pipelineTableJob)
 	if err != nil {

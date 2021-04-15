@@ -168,3 +168,6 @@ type OpenshiftpipelineSummary struct {
 type Openshiftdashboard struct {
 	Dashboard []OpenshiftpipelineSummary `json:"dashboard"`
 }
+type PipeData struct {
+	Pipeline OpenshiftpipelineSummary `json:"pipeline"`
+}

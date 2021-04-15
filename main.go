@@ -29,7 +29,9 @@ func main() {
 	// http.HandleFunc("/delete/pipeline", handler.DeletePipeline)
 	// http.HandleFunc("/os/{id:key}", GetBranch)
 	r := mux.NewRouter()
+	r.HandleFunc("/status", handler.StatusGitLab)
 	r.HandleFunc("/{platform}/{branch}", handler.OpenshiftHandlerReleasee)
+	r.HandleFunc("/{platform}/{branch}/pipeline/{id}", handler.GetPipelineDataAPI)
 
 	// Trigger db update function
 	go handler.UpdateDatabase()
