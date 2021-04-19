@@ -230,6 +230,13 @@ func getImageTagJob(p, b string) string {
 		case "jiva-operator":
 			return "NA" // not yet done
 		}
+	} else if p == "43" {
+		switch b {
+		case "release-branch":
+			return "2P01-ZFS-LOCALPV-PROVISIONER-DEPLOY"
+		case "lvm-localpv":
+			return "2P01-LVM-LOCALPV-PROVISIONER-DEPLOY"
+		}
 	} else {
 		return "NA"
 	}

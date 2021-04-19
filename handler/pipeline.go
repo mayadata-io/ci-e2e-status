@@ -11,7 +11,7 @@ import (
 	"github.com/mayadata-io/ci-e2e-status/database"
 )
 
-// GetPipelineDetails return packet pipeline data to /packet path
+// GetPipelineDetails return pipeline data
 func GetPipelineDataAPI(w http.ResponseWriter, r *http.Request) {
 	// Allow cross origin request
 	w.Header().Set("Access-Control-Allow-Origin", "*")

@@ -30,10 +30,15 @@ func UpdateDatabase() {
 				go getPlatformData(token, OPENSHIFTID, b, pipelineTable, pipelineTableJobs)
 			case "konvoy":
 				go getPlatformData(token, KONVOYID, b, pipelineTable, pipelineTableJobs)
+			case "nativek8s":
+				for _, nativeBranch := range database.NativeBranch {
+					go getPlatformData(token, NATIVEK8SID, strings.Replace(nativeBranch, "_", "-", -1), fmt.Sprintf("%s_%s", platform, nativeBranch), fmt.Sprintf("%s_%s_%s", platform, nativeBranch, "jobs"))
+				}
 			}
 
 		}
 	}
+	// go getPlatformData(token, NATIVEK8SID, "release-branch", pipelineTable, pipelineTableJobs)
 
 	tick := time.Tick(2 * time.Minute)
 	// // branch := []string{}
@@ -49,6 +54,10 @@ func UpdateDatabase() {
 						go getPlatformData(token, OPENSHIFTID, b, pipelineTable, pipelineTableJobs)
 					case "konvoy":
 						go getPlatformData(token, KONVOYID, b, pipelineTable, pipelineTableJobs)
+					case "nativek8s":
+						for _, nativeBranch := range database.NativeBranch {
+							go getPlatformData(token, NATIVEK8SID, b, fmt.Sprintf("%s_%s", platform, nativeBranch), fmt.Sprintf("%s_%s_%s", platform, nativeBranch, "jobs"))
+						}
 					}
 				}
 
@@ -56,33 +65,4 @@ func UpdateDatabase() {
 		}
 
 	}
-
-	// Update the database, This wil run only first time
-	// k8sVersion := []string{"ultimate", "penultimate", "antepenultimate"}
-	// for _, k8sVersion := range k8sVersion {
-	// 	branch := "k8s-" + k8sVersion
-	// 	pipelineTable := "packet_pipeline_k8s_" + k8sVersion
-	// 	jobTable := "packet_jobs_k8s_" + k8sVersion
-	// 	getPlatformData(token, PACKETID, branch, pipelineTable, jobTable) //e2e-packet
-	// }
-	// go getPlatformData(token, KONVOYID, "release-branch", "konvoy_pipeline", "konvoy_jobs")                // e2e-konvoy
-	// go getPlatformData(token, OPENSHIFTID, "release-branch", "release_pipeline_data", "release_jobs_data") //e2e-openshift
-	// go getPlatformData(token, NATIVEK8SID, "release-branch", "nativek8s_pipeline", "nativek8s_jobs")       //e2e-nativek8s
-
-	// // loop will iterate at every 2nd minute and update the database
-	// tick := time.Tick(2 * time.Minute)
-	// // branch := []string{}
-	// for range tick {
-	// 	k8sVersion := []string{"ultimate", "penultimate", "antepenultimate"}
-	// 	for _, k8sVersion := range k8sVersion {
-	// 		branch := "k8s-" + k8sVersion
-	// 		pipelineTable := "packet_pipeline_k8s_" + k8sVersion
-	// 		jobTable := "packet_jobs_k8s_" + k8sVersion
-	// 		getPlatformData(token, PACKETID, branch, pipelineTable, jobTable) //e2e-packet
-	// 	}
-	// 	go getPlatformData(token, KONVOYID, "release-branch", "konvoy_pipeline", "konvoy_jobs")                // e2e-konvoy
-	// 	go getPlatformData(token, OPENSHIFTID, "release-branch", "release_pipeline_data", "release_jobs_data") //e2e-openshift
-	// 	go getPlatformData(token, NATIVEK8SID, "release-branch", "nativek8s_pipeline", "nativek8s_jobs")       //e2e-nativek8s
-	// }
-
 }

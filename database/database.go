@@ -9,8 +9,9 @@ import (
 	"github.com/golang/glog"
 )
 
-var Platform = [...]string{"openshift", "konvoy"}
+var Platform = [...]string{"nativek8s"}
 var Branch = [...]string{"openebs_localpv", "openebs_jiva", "openebs_cstor_csi", "openebs_cstor"}
+var NativeBranch = [...]string{"release_branch", "lvm_localpv"}
 
 // Db variable use in other package
 var Db *sql.DB
@@ -49,32 +50,63 @@ func InitDb() {
 
 // createTable in database if not abvailable
 func createTable() {
-	// Create platform, pipeline and job table
-	// pipeline := []string{"packet_pipeline_k8s_ultimate", "packet_pipeline_k8s_penultimate", "packet_pipeline_k8s_antepenultimate", "konvoy_pipeline", "release_pipeline_data", "nativek8s_pipeline"}
-	// pipelineJobs := []string{"packet_jobs_k8s_ultimate", "packet_jobs_k8s_penultimate", "packet_jobs_k8s_antepenultimate", "konvoy_jobs", "release_jobs_data", "nativek8s_jobs"}
-	// Create pipeline table in database
 
 	for i := range Platform {
-		for j := range Branch {
-			query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(project VARCHAR, id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, openshift_pid VARCHAR, kibana_url VARCHAR, release_tag VARCHAR);", fmt.Sprintf(Platform[i]+"_"+Branch[j]))
-			value, err := Db.Query(query)
-			if err != nil {
-				glog.Error(err)
+		if Platform[i] == "nativek8s" {
+			for j := range NativeBranch {
+				query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(project VARCHAR, id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, openshift_pid VARCHAR, kibana_url VARCHAR, release_tag VARCHAR);", fmt.Sprintf(Platform[i]+"_"+NativeBranch[j]))
+				value, err := Db.Query(query)
+				if err != nil {
+					glog.Error(err)
+				}
+				defer value.Close()
 			}
-			defer value.Close()
+		} else {
+			for j := range Branch {
+				query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(project VARCHAR, id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, openshift_pid VARCHAR, kibana_url VARCHAR, release_tag VARCHAR);", fmt.Sprintf(Platform[i]+"_"+Branch[j]))
+				value, err := Db.Query(query)
+				if err != nil {
+					glog.Error(err)
+				}
+				defer value.Close()
+			}
 		}
 	}
 	// Create pipeline jobs table in database
 	for i := range Platform {
-		for j := range Branch {
-			query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(pipelineid INT, id INT PRIMARY KEY,status VARCHAR, stage VARCHAR, name VARCHAR, ref VARCHAR, github_readme VARCHAR, created_at VARCHAR, started_at VARCHAR, finished_at VARCHAR, message VARCHAR, author_name VARCHAR);", fmt.Sprintf(Platform[i]+"_"+Branch[j]+"_jobs"))
-			value, err := Db.Query(query)
-			if err != nil {
-				glog.Error(err)
+		if Platform[i] == "nativek8s" {
+			for j := range NativeBranch {
+				query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(pipelineid INT, id INT PRIMARY KEY,status VARCHAR, stage VARCHAR, name VARCHAR, ref VARCHAR, github_readme VARCHAR, created_at VARCHAR, started_at VARCHAR, finished_at VARCHAR, message VARCHAR, author_name VARCHAR);", fmt.Sprintf(Platform[i]+"_"+NativeBranch[j]+"_jobs"))
+				value, err := Db.Query(query)
+				if err != nil {
+					glog.Error(err)
+				}
+				defer value.Close()
 			}
-			defer value.Close()
+		} else {
+			for j := range Branch {
+				query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(pipelineid INT, id INT PRIMARY KEY,status VARCHAR, stage VARCHAR, name VARCHAR, ref VARCHAR, github_readme VARCHAR, created_at VARCHAR, started_at VARCHAR, finished_at VARCHAR, message VARCHAR, author_name VARCHAR);", fmt.Sprintf(Platform[i]+"_"+Branch[j]+"_jobs"))
+				value, err := Db.Query(query)
+				if err != nil {
+					glog.Error(err)
+				}
+				defer value.Close()
+			}
 		}
 	}
+
+	// zfs_localpv_query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(project VARCHAR, id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, openshift_pid VARCHAR, kibana_url VARCHAR, release_tag VARCHAR);", fmt.Sprintf("%s_%s", "zfs_localpv", "release_branch"))
+	// zfs_localpv, err := Db.Query(zfs_localpv_query)
+	// if err != nil {
+	// 	glog.Error(err)
+	// }
+	// defer zfs_localpv.Close()
+	// lvmlocalpv_query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(project VARCHAR, id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, openshift_pid VARCHAR, kibana_url VARCHAR, release_tag VARCHAR);", fmt.Sprintf("%s_%s", "lvmlocalpv", "lvml-oaclpv"))
+	// lvmlocalpv, err := Db.Query(lvmlocalpv_query)
+	// if err != nil {
+	// 	glog.Error(err)
+	// }
+	// defer lvmlocalpv.Close()
 }
 
 // dbConfig get config from environment variable
