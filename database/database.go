@@ -9,7 +9,7 @@ import (
 	"github.com/golang/glog"
 )
 
-var Platform = [...]string{"nativek8s"}
+var Platform = [...]string{"konvoy", "openshift", "nativek8s"}
 var Branch = [...]string{"openebs_localpv", "openebs_jiva", "openebs_cstor_csi", "openebs_cstor"}
 var NativeBranch = [...]string{"release_branch", "lvm_localpv"}
 

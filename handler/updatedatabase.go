@@ -32,7 +32,8 @@ func UpdateDatabase() {
 				go getPlatformData(token, KONVOYID, b, pipelineTable, pipelineTableJobs)
 			case "nativek8s":
 				for _, nativeBranch := range database.NativeBranch {
-					go getPlatformData(token, NATIVEK8SID, strings.Replace(nativeBranch, "_", "-", -1), fmt.Sprintf("%s_%s", platform, nativeBranch), fmt.Sprintf("%s_%s_%s", platform, nativeBranch, "jobs"))
+					nB := strings.Replace(nativeBranch, "_", "-", -1)
+					go getPlatformData(token, NATIVEK8SID, nB, fmt.Sprintf("%s_%s", platform, nativeBranch), fmt.Sprintf("%s_%s_%s", platform, nativeBranch, "jobs"))
 				}
 			}
 
