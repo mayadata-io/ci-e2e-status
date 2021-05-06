@@ -38,7 +38,7 @@ func QueryData(datas *Openshiftdashboard, pipelineTable string, jobsTable string
 		if err != nil {
 			return err
 		}
-		jobsquery := fmt.Sprintf("SELECT pipelineid, id, status , stage , name , ref ,github_readme, created_at , started_at , finished_at  FROM %s WHERE pipelineid = $1 ORDER BY id;", jobsTable)
+		jobsquery := fmt.Sprintf("SELECT pipelineid, id, status , stage , name , ref ,github_readme, created_at , started_at , finished_at, author_name  FROM %s WHERE pipelineid = $1 ORDER BY id;", jobsTable)
 		jobsrows, err := database.Db.Query(jobsquery, pipelinedata.ID)
 		if err != nil {
 			return err
@@ -58,6 +58,7 @@ func QueryData(datas *Openshiftdashboard, pipelineTable string, jobsTable string
 				&jobsdata.CreatedAt,
 				&jobsdata.StartedAt,
 				&jobsdata.FinishedAt,
+				&jobsdata.WebURL,
 			)
 			if err != nil {
 				return err
@@ -185,8 +186,8 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable string) {
 			if err != nil {
 				glog.Error("error in getting JobUrl", err)
 			}
-			sqlStatement := fmt.Sprintf("INSERT INTO %s (pipelineid, id, status, stage, name, ref, github_readme, created_at, started_at, finished_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"+
-				"ON CONFLICT (id) DO UPDATE SET status = $3, stage = $4, name = $5, ref = $6, github_readme = $7, created_at = $8, started_at = $9, finished_at = $10 RETURNING id;", jobTable)
+			sqlStatement := fmt.Sprintf("INSERT INTO %s (pipelineid, id, status, stage, name, ref, github_readme, created_at, started_at, finished_at, author_name ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"+
+				"ON CONFLICT (id) DO UPDATE SET status = $3, stage = $4, name = $5, ref = $6, github_readme = $7, created_at = $8, started_at = $9, finished_at = $10, author_name = $11 RETURNING id;", jobTable)
 			id := 0
 			err = database.Db.QueryRow(sqlStatement,
 				pipelineData[i].ID,
@@ -199,6 +200,7 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable string) {
 				pipelineJobsData[j].CreatedAt,
 				pipelineJobsData[j].StartedAt,
 				pipelineJobsData[j].FinishedAt,
+				pipelineJobsData[j].WebURL,
 			).Scan(&id)
 			if err != nil {
 				glog.Error(err)
@@ -218,6 +220,9 @@ func getImageTagJob(p, b string) string {
 		case "openebs-cstor-csi":
 			return "AAO9-CSTOR-OPERATOR"
 		case "jiva-operator":
+			return "K9YC-OpenEBS"
+		case "openebs-localpv":
+			return "2LP01-OPENEBS-DEPLOY"
 		}
 	} else if p == "34" { //for konvoy
 		switch b {
@@ -228,7 +233,9 @@ func getImageTagJob(p, b string) string {
 		case "openebs-cstor-csi":
 			return "2ICO01-CSTOR-OPERATOR"
 		case "jiva-operator":
-			return "NA" // not yet done
+			return "K9YC-OpenEBS"
+		case "openebs-localpv":
+			return "2LP01-OPENEBS-DEPLOY"
 		}
 	} else if p == "43" {
 		switch b {

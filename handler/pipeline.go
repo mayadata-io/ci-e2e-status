@@ -62,7 +62,7 @@ func GetPipelineData(pipe *PipeData, platform, branch, id string) error {
 		return err
 	}
 
-	jobsquery := fmt.Sprintf("SELECT pipelineid, id, status , stage , name , ref ,github_readme, created_at , started_at , finished_at  FROM %s WHERE pipelineid = $1 ORDER BY id;", fmt.Sprintf("%s_%s_jobs", platform, branch))
+	jobsquery := fmt.Sprintf("SELECT pipelineid, id, status , stage , name , ref ,github_readme, created_at , started_at , finished_at, author_name  FROM %s WHERE pipelineid = $1 ORDER BY id;", fmt.Sprintf("%s_%s_jobs", platform, branch))
 	jobsrows, err := database.Db.Query(jobsquery, pipelinedata.ID)
 	if err != nil {
 		return err
@@ -82,6 +82,7 @@ func GetPipelineData(pipe *PipeData, platform, branch, id string) error {
 			&jobsdata.CreatedAt,
 			&jobsdata.StartedAt,
 			&jobsdata.FinishedAt,
+			&jobsdata.WebURL,
 		)
 		if err != nil {
 			return err

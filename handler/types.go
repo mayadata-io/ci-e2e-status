@@ -128,6 +128,7 @@ type BuildJobssummary struct {
 	CreatedAt    string `json:"created_at"`
 	StartedAt    string `json:"started_at"`
 	FinishedAt   string `json:"finished_at"`
+	WebURL       string `json:"web_url"`
 }
 
 // BuildpipelineSummary contains the details of a builds pipelines

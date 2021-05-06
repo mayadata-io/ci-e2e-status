@@ -10,7 +10,7 @@ import (
 )
 
 var Platform = [...]string{"konvoy", "openshift", "nativek8s"}
-var Branch = [...]string{"openebs_localpv", "openebs_jiva", "openebs_cstor_csi", "openebs_cstor"}
+var Branch = [...]string{"jiva_operator", "openebs_jiva", "openebs_cstor_csi", "openebs_cstor", "openebs_localpv"}
 var NativeBranch = [...]string{"release_branch", "lvm_localpv"}
 
 // Db variable use in other package
