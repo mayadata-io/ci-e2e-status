@@ -38,7 +38,7 @@ func QueryData(datas *Openshiftdashboard, pipelineTable string, jobsTable string
 		if err != nil {
 			return err
 		}
-		jobsquery := fmt.Sprintf("SELECT pipelineid, id, status , stage , name , ref ,github_readme, created_at , started_at , finished_at  FROM %s WHERE pipelineid = $1 ORDER BY id;", jobsTable)
+		jobsquery := fmt.Sprintf("SELECT pipelineid, id, status , stage , name , ref ,github_readme, created_at , started_at , finished_at, author_name  FROM %s WHERE pipelineid = $1 ORDER BY id;", jobsTable)
 		jobsrows, err := database.Db.Query(jobsquery, pipelinedata.ID)
 		if err != nil {
 			return err
@@ -58,6 +58,7 @@ func QueryData(datas *Openshiftdashboard, pipelineTable string, jobsTable string
 				&jobsdata.CreatedAt,
 				&jobsdata.StartedAt,
 				&jobsdata.FinishedAt,
+				&jobsdata.WebURL,
 			)
 			if err != nil {
 				return err
@@ -141,6 +142,7 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable string) {
 		glog.Error(err)
 		return
 	}
+	// glog.Infoln("\n\n pipelineData : \t", pipelineData)
 	for i := range pipelineData {
 		pipelineJobsData, err := releasePipelineJobs(pipelineData[i].ID, token, project)
 		if err != nil {
@@ -153,10 +155,11 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable string) {
 			JobFinishedAt := pipelineJobsData[len(pipelineJobsData)-1].FinishedAt
 			logURL = Kibanaloglink(pipelineData[i].Sha, pipelineData[i].ID, pipelineData[i].Status, jobStartedAt, JobFinishedAt)
 		}
-		imageTag, err = getImageTag(pipelineJobsData, token)
+		imageTag, err = getImageTag(pipelineJobsData, token, project, branch)
 		if err != nil {
 			glog.Error(err)
 		}
+		// glog.Infoln(fmt.Sprintf("\n\n\n ImageTag : %s \n\n\n", imageTag))
 		// Add pipelines data to Database
 		sqlStatement := fmt.Sprintf("INSERT INTO %s (project, id, sha, ref, status, web_url, openshift_pid, kibana_url, release_tag) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"+
 			"ON CONFLICT (id) DO UPDATE SET status = $5, openshift_pid = $7, kibana_url = $8, release_tag = $9 RETURNING id;", pipelineTable)
@@ -183,8 +186,8 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable string) {
 			if err != nil {
 				glog.Error("error in getting JobUrl", err)
 			}
-			sqlStatement := fmt.Sprintf("INSERT INTO %s (pipelineid, id, status, stage, name, ref, github_readme, created_at, started_at, finished_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"+
-				"ON CONFLICT (id) DO UPDATE SET status = $3, stage = $4, name = $5, ref = $6, github_readme = $7, created_at = $8, started_at = $9, finished_at = $10 RETURNING id;", jobTable)
+			sqlStatement := fmt.Sprintf("INSERT INTO %s (pipelineid, id, status, stage, name, ref, github_readme, created_at, started_at, finished_at, author_name ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"+
+				"ON CONFLICT (id) DO UPDATE SET status = $3, stage = $4, name = $5, ref = $6, github_readme = $7, created_at = $8, started_at = $9, finished_at = $10, author_name = $11 RETURNING id;", jobTable)
 			id := 0
 			err = database.Db.QueryRow(sqlStatement,
 				pipelineData[i].ID,
@@ -197,6 +200,7 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable string) {
 				pipelineJobsData[j].CreatedAt,
 				pipelineJobsData[j].StartedAt,
 				pipelineJobsData[j].FinishedAt,
+				pipelineJobsData[j].WebURL,
 			).Scan(&id)
 			if err != nil {
 				glog.Error(err)
@@ -205,11 +209,53 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable string) {
 		}
 	}
 }
+func getImageTagJob(p, b string) string {
+	// switch p {
+	if p == "36" { //for openshift
+		switch b {
+		case "openebs-cstor":
+			return "K9YC-OpenEBS"
+		case "openebs-jiva":
+			return "K9YC-OpenEBS"
+		case "openebs-cstor-csi":
+			return "AAO9-CSTOR-OPERATOR"
+		case "jiva-operator":
+			return "K9YC-OpenEBS"
+		case "openebs-localpv":
+			return "2LP01-OPENEBS-DEPLOY"
+		}
+	} else if p == "34" { //for konvoy
+		switch b {
+		case "openebs-cstor":
+			return "2IC01-OPENEBS-KONVOY-DEPLOY"
+		case "openebs-jiva":
+			return "2JP01-OPENEBS-KONVOY-DEPLOY"
+		case "openebs-cstor-csi":
+			return "2ICO01-CSTOR-OPERATOR"
+		case "jiva-operator":
+			return "K9YC-OpenEBS"
+		case "openebs-localpv":
+			return "2LP01-OPENEBS-DEPLOY"
+		}
+	} else if p == "43" {
+		switch b {
+		case "release-branch":
+			return "2P01-ZFS-LOCALPV-PROVISIONER-DEPLOY"
+		case "lvm-localpv":
+			return "2P01-LVM-LOCALPV-PROVISIONER-DEPLOY"
+		}
+	} else {
+		return "NA"
+	}
+	return "NA"
+}
 
-func getImageTag(jobsData Jobs, token string) (string, error) {
-	var jobURL string
+func getImageTag(jobsData Jobs, token, project, branch string) (string, error) {
+	var jobURL, tagJob string
+	tagJob = getImageTagJob(project, branch)
+	glog.Infoln(fmt.Sprintf("\n platform : %s \n branch : %s \n tagJob : %s \n", project, branch, tagJob))
 	for _, value := range jobsData {
-		if value.Name == "K9YC-OpenEBS" || value.Name == "openebs-deploy" || value.Name == "XJGT-OPENEBS-KONVOY-DEPLOY" || value.Name == "2P01-ZFS-LOCALPV-PROVISIONER-DEPLOY" {
+		if value.Name == tagJob {
 			jobURL = value.WebURL + "/raw"
 		}
 	}
