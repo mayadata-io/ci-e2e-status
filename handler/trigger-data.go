@@ -126,14 +126,14 @@ func releasePipelineJobs(pipelineID int, token string, project string) (Jobs, er
 		}
 		var tmpObj Jobs
 		err = json.Unmarshal(body, &tmpObj)
-		glog.Infoln("error ", err)
+		// glog.Infoln("error ", err)
 		obj = append(obj, tmpObj...)
 	}
 	return obj, nil
 }
 
 // openshiftCommit from gitlab api and store to database
-func getPlatformData(token, project, branch, pipelineTable, jobTable string) {
+func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTagJob string) {
 	var logURL string
 	var imageTag string
 	var getURLString string
@@ -155,7 +155,7 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable string) {
 			JobFinishedAt := pipelineJobsData[len(pipelineJobsData)-1].FinishedAt
 			logURL = Kibanaloglink(pipelineData[i].Sha, pipelineData[i].ID, pipelineData[i].Status, jobStartedAt, JobFinishedAt)
 		}
-		imageTag, err = getImageTag(pipelineJobsData, token, project, branch)
+		imageTag, err = getImageTag(pipelineJobsData, token, project, branch, releaseTagJob)
 		if err != nil {
 			glog.Error(err)
 		}
@@ -209,50 +209,10 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable string) {
 		}
 	}
 }
-func getImageTagJob(p, b string) string {
-	// switch p {
-	if p == "36" { //for openshift
-		switch b {
-		case "openebs-cstor":
-			return "K9YC-OpenEBS"
-		case "openebs-jiva":
-			return "K9YC-OpenEBS"
-		case "openebs-cstor-csi":
-			return "AAO9-CSTOR-OPERATOR"
-		case "jiva-operator":
-			return "K9YC-OpenEBS"
-		case "openebs-localpv":
-			return "2LP01-OPENEBS-DEPLOY"
-		}
-	} else if p == "34" { //for konvoy
-		switch b {
-		case "openebs-cstor":
-			return "2IC01-OPENEBS-KONVOY-DEPLOY"
-		case "openebs-jiva":
-			return "2JP01-OPENEBS-KONVOY-DEPLOY"
-		case "openebs-cstor-csi":
-			return "2ICO01-CSTOR-OPERATOR"
-		case "jiva-operator":
-			return "K9YC-OpenEBS"
-		case "openebs-localpv":
-			return "2LP01-OPENEBS-DEPLOY"
-		}
-	} else if p == "43" {
-		switch b {
-		case "release-branch":
-			return "2P01-ZFS-LOCALPV-PROVISIONER-DEPLOY"
-		case "lvm-localpv":
-			return "2P01-LVM-LOCALPV-PROVISIONER-DEPLOY"
-		}
-	} else {
-		return "NA"
-	}
-	return "NA"
-}
 
-func getImageTag(jobsData Jobs, token, project, branch string) (string, error) {
+func getImageTag(jobsData Jobs, token, project, branch, releaseTagJob string) (string, error) {
 	var jobURL, tagJob string
-	tagJob = getImageTagJob(project, branch)
+	tagJob = releaseTagJob
 	glog.Infoln(fmt.Sprintf("\n platform : %s \n branch : %s \n tagJob : %s \n", project, branch, tagJob))
 	for _, value := range jobsData {
 		if value.Name == tagJob {
