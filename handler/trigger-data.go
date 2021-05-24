@@ -34,6 +34,7 @@ func QueryData(datas *Openshiftdashboard, pipelineTable string, jobsTable string
 			&pipelinedata.OpenshiftPID,
 			&pipelinedata.LogURL,
 			&pipelinedata.ReleaseTag,
+			&pipelinedata.CreatedAt,
 		)
 		if err != nil {
 			return err
@@ -161,8 +162,8 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTag
 		}
 		// glog.Infoln(fmt.Sprintf("\n\n\n ImageTag : %s \n\n\n", imageTag))
 		// Add pipelines data to Database
-		sqlStatement := fmt.Sprintf("INSERT INTO %s (project, id, sha, ref, status, web_url, openshift_pid, kibana_url, release_tag) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"+
-			"ON CONFLICT (id) DO UPDATE SET status = $5, openshift_pid = $7, kibana_url = $8, release_tag = $9 RETURNING id;", pipelineTable)
+		sqlStatement := fmt.Sprintf("INSERT INTO %s (project, id, sha, ref, status, web_url, openshift_pid, kibana_url, release_tag, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"+
+			"ON CONFLICT (id) DO UPDATE SET status = $5, openshift_pid = $7, kibana_url = $8, release_tag = $9, created_at = $10 RETURNING id;", pipelineTable)
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
 			project,
@@ -174,11 +175,12 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTag
 			pipelineData[i].ID,
 			logURL,
 			imageTag,
+			pipelineJobsData[0].CreatedAt,
 		).Scan(&id)
 		if err != nil {
 			glog.Error(err)
 		}
-		glog.Infof("New record ID for %s Pipeline: %d", project, id)
+		glog.Infof("New record ID for %s Pipeline: %d CreatedAt : %s", project, id, pipelineJobsData[0].CreatedAt)
 
 		// Add pipeline jobs data to Database
 		for j := range pipelineJobsData {

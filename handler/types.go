@@ -32,12 +32,13 @@ var BaseURL = "https://gitlab.openebs.ci/"
 
 // Pipeline struct
 type Pipeline []struct {
-	ID     int    `json:"id"`
-	Sha    string `json:"sha"`
-	Ref    string `json:"ref"`
-	Status string `json:"status"`
-	WebURL string `json:"web_url"`
-	Jobs   Jobs   `json:"jobs"`
+	ID        int    `json:"id"`
+	Sha       string `json:"sha"`
+	Ref       string `json:"ref"`
+	Status    string `json:"status"`
+	WebURL    string `json:"web_url"`
+	Jobs      Jobs   `json:"jobs"`
+	CreatedAt string `json:"created_at"`
 }
 
 // Jobs struct
@@ -79,6 +80,7 @@ type OpenshiftpipelineSummary struct {
 	OpenshiftPID string             `json:"openshift_pid"`
 	LogURL       string             `json:"kibana_url" `
 	ReleaseTag   string             `json:"release_tag"`
+	CreatedAt    string             `json:"created_at"`
 	Jobs         []BuildJobssummary `json:"jobs"`
 }
 

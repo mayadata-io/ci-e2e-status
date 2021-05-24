@@ -10,3 +10,5 @@ github.com/lib/pq
 github.com/lib/pq/oid
 # github.com/rs/cors v1.7.0
 ## explicit
+# github.com/tidwall/gjson v1.8.0
+## explicit
