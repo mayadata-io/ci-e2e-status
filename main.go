@@ -28,6 +28,7 @@ func main() {
 	r.HandleFunc("/{platform}/{branch}", handler.OpenshiftHandlerReleasee)
 	r.HandleFunc("/{platform}/{branch}/pipeline/{id}", handler.GetPipelineDataAPI)
 	r.HandleFunc("/{platform}/{branch}/job/{id}/raw", handler.GetJobLogs)
+	r.HandleFunc("/recent", handler.HandleRecentPipelines)
 
 	// Trigger db update function
 	go handler.UpdateDatabase(gitlab)

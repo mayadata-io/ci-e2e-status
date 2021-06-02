@@ -7,44 +7,74 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
-	"github.com/gorilla/mux"
+	"github.com/mayadata-io/ci-e2e-status/config"
 	"github.com/mayadata-io/ci-e2e-status/database"
 )
 
-// GetPipelineDetails return pipeline data
-func GetPipelineDataAPI(w http.ResponseWriter, r *http.Request) {
+type Recent struct {
+	Branch   string     `json:"branch"`
+	Pipeline []PipeData `json:"pipelines"`
+}
+type RecentAPI struct {
+	Recent []Recent `json:"recent"`
+}
+
+func HandleRecentPipelines(w http.ResponseWriter, r *http.Request) {
 	// Allow cross origin request
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers:", "Origin, Content-Type, X-Auth-Token, Authorization")
 	w.Header().Set("Content-Type", "application/json")
-	vars := mux.Vars(r)
 	w.WriteHeader(http.StatusOK)
-	platform := vars["platform"]                            //openshift
-	branch := strings.Replace(vars["branch"], "-", "_", -1) // openebs-jiva
-	id := vars["id"]
-	glog.Infoln(fmt.Sprintf("\n\n Platform : %s \n branch : %s \n id : %s \n", platform, branch, id))
-	pipe := PipeData{}
-	err := GetPipelineData(&pipe, platform, branch, id)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		glog.Error(err)
-		return
+	con := config.ReadConfig()
+	pipe := []PipeData{}
+	recPip := []Recent{}
+	rec := Recent{}
+	pi := PipeData{}
+	rApi := RecentAPI{}
+	for _, p := range con.Projects {
+		if p.Name == "openshift" {
+			for _, b := range p.Branches {
+				pipe = nil
+				err := GetPipeline(&pi, p.Name, strings.Replace(b.Name, "-", "_", -1), &pipe)
+				if err != nil {
+					glog.Infoln(err)
+				}
+				err = GetPipeline(&pi, "konvoy", strings.Replace(b.Name, "-", "_", -1), &pipe)
+				if err != nil {
+					glog.Infoln(err)
+				}
+
+				rec.Branch = b.Name
+				rec.Pipeline = pipe
+				recPip = append(recPip, rec)
+			}
+		} else if p.Name == "nativek8s" {
+			for _, b := range p.Branches {
+				pipe = nil
+				err := GetPipeline(&pi, p.Name, strings.Replace(b.Name, "-", "_", -1), &pipe)
+				if err != nil {
+					glog.Infoln(err)
+				}
+				rec.Branch = b.Name
+				rec.Pipeline = pipe
+				recPip = append(recPip, rec)
+			}
+		}
 	}
-	body, err := json.Marshal(pipe)
+	rApi.Recent = append(rApi.Recent, recPip...)
+	body, err := json.Marshal(rApi)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		glog.Error(err)
 		return
 	}
 	w.Write(body)
-
 }
 
 // GetPipelineData to get perticular pipeline data with jobs
-func GetPipelineData(pipe *PipeData, platform, branch, id string) error {
-	pipelineQuery := fmt.Sprintf("SELECT * FROM %s WHERE id=%s ;", fmt.Sprintf("%s_%s", platform, branch), id)
-	glog.Infoln("\n \t %s \n", pipelineQuery)
+func GetPipeline(pipe *PipeData, platform, branch string, pipeArray *[]PipeData) error {
+	pipelineQuery := fmt.Sprintf("SELECT * FROM %s WHERE id=(select max(id) from %s) ;", fmt.Sprintf("%s_%s", platform, branch), fmt.Sprintf("%s_%s", platform, branch))
 	row := database.Db.QueryRow(pipelineQuery)
 	pipelinedata := OpenshiftpipelineSummary{}
 	err := row.Scan(
@@ -92,5 +122,6 @@ func GetPipelineData(pipe *PipeData, platform, branch, id string) error {
 		pipelinedata.Jobs = jobsdataarray
 	}
 	pipe.Pipeline = pipelinedata
+	*pipeArray = append(*pipeArray, *pipe)
 	return nil
 }

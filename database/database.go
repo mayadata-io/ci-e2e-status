@@ -52,7 +52,7 @@ func createTable(gitlab config.Config) {
 	for _, project := range gitlab.Projects {
 		for _, branch := range project.Branches {
 			BranchName := strings.Replace(branch.Name, "-", "_", -1)
-			pipelineQuery := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(project VARCHAR, id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, openshift_pid VARCHAR, kibana_url VARCHAR, release_tag VARCHAR);", fmt.Sprintf("%s_%s", project.Name, BranchName))
+			pipelineQuery := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s(project VARCHAR, id INT PRIMARY KEY, sha VARCHAR, ref VARCHAR, status VARCHAR, web_url VARCHAR, openshift_pid VARCHAR, kibana_url VARCHAR, release_tag VARCHAR, created_at VARCHAR);", fmt.Sprintf("%s_%s", project.Name, BranchName))
 			pipelineQueryExec, err := Db.Query(pipelineQuery)
 			if err != nil {
 				glog.Error(err)
