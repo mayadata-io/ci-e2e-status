@@ -135,9 +135,9 @@ func releasePipelineJobs(pipelineID int, token string, project string) (Jobs, er
 
 // openshiftCommit from gitlab api and store to database
 func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTagJob string) {
-	var logURL string
-	var imageTag string
-	var getURLString string
+	var logURL, imageTag, getURLString string
+	// var imageTag string
+	// var getURLString string
 	pipelineData, err := getPipelineData(token, project, branch)
 	if err != nil {
 		glog.Error(err)
@@ -160,6 +160,10 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTag
 		if err != nil {
 			glog.Error(err)
 		}
+		var createdAt string
+		if len(pipelineJobsData) != 0 {
+			createdAt = pipelineJobsData[0].CreatedAt
+		}
 		// glog.Infoln(fmt.Sprintf("\n\n\n ImageTag : %s \n\n\n", imageTag))
 		// Add pipelines data to Database
 		sqlStatement := fmt.Sprintf("INSERT INTO %s (project, id, sha, ref, status, web_url, openshift_pid, kibana_url, release_tag, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"+
@@ -175,12 +179,12 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTag
 			pipelineData[i].ID,
 			logURL,
 			imageTag,
-			pipelineJobsData[0].CreatedAt,
+			createdAt,
 		).Scan(&id)
 		if err != nil {
 			glog.Error(err)
 		}
-		glog.Infof("New record ID for %s Pipeline: %d CreatedAt : %s", project, id, pipelineJobsData[0].CreatedAt)
+		glog.Infof("New record ID for %s Pipeline: %d CreatedAt : %s", project, id, createdAt)
 
 		// Add pipeline jobs data to Database
 		for j := range pipelineJobsData {

@@ -57,6 +57,7 @@ func GetPipelineData(pipe *PipeData, platform, branch, id string) error {
 		&pipelinedata.OpenshiftPID,
 		&pipelinedata.LogURL,
 		&pipelinedata.ReleaseTag,
+		&pipelinedata.CreatedAt,
 	)
 	if err != nil {
 		return err
