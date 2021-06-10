@@ -10,7 +10,7 @@
                 },
                 {
                     "name": "openebs-jiva",
-                    "releaseTagJob": "K9YC-OpenEBS"
+                    "releaseTagJob": "2JP01-OPENEBS-DEPLOY"
                 },
                 {
                     "name": "openebs-cstor-csi",
