@@ -1,16 +1,26 @@
 {
     "projects" : [
         {
+            "name": "nativek8s",
+            "id": "43",
+            "branches":[
+                {
+                    "name": "release-branch",
+                    "releaseTagJob": "2P01-ZFS-LOCALPV-PROVISIONER-DEPLOY"
+                },
+                {
+                    "name": "lvm-localpv",
+                    "releaseTagJob": "2P01-LVM-LOCALPV-PROVISIONER-DEPLOY"
+                }
+            ]
+        },
+        {
             "name": "openshift",
             "id": "36",
             "branches":[
                 {
-                    "name": "jiva-operator",
-                    "releaseTagJob": "K9YC-OpenEBS"
-                },
-                {
-                    "name": "openebs-jiva",
-                    "releaseTagJob": "2JP01-OPENEBS-DEPLOY"
+                    "name": "openebs-localpv",
+                    "releaseTagJob": "2LP01-OPENEBS-DEPLOY"
                 },
                 {
                     "name": "openebs-cstor-csi",
@@ -21,10 +31,13 @@
                     "releaseTagJob": "K9YC-OpenEBS"
                 },
                 {
-                    "name": "openebs-localpv",
-                    "releaseTagJob": "2LP01-OPENEBS-DEPLOY"
+                    "name": "jiva-operator",
+                    "releaseTagJob": "K9YC-OpenEBS"
+                },
+                {
+                    "name": "openebs-jiva",
+                    "releaseTagJob": "2JP01-OPENEBS-DEPLOY"
                 }
-            
             ]
         },{
             "name": "konvoy",
@@ -49,20 +62,6 @@
                 {
                     "name": "openebs-localpv",
                     "releaseTagJob": "2LP01-OPENEBS-DEPLOY"
-                }
-            
-            ]
-        },{
-            "name": "nativek8s",
-            "id": "43",
-            "branches":[
-                {
-                    "name": "release-branch",
-                    "releaseTagJob": "2P01-ZFS-LOCALPV-PROVISIONER-DEPLOY"
-                },
-                {
-                    "name": "lvm-localpv",
-                    "releaseTagJob": "2P01-LVM-LOCALPV-PROVISIONER-DEPLOY"
                 }
             ]
         }
