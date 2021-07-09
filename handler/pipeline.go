@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -93,4 +94,35 @@ func GetPipelineData(pipe *PipeData, platform, branch, id string) error {
 	}
 	pipe.Pipeline = pipelinedata
 	return nil
+}
+
+type CheckExists struct {
+	Id        int
+	TableName string
+}
+
+// CheckUpdateRequire function check the pipeline present in DB , if not return true
+func CheckUpdateRequire(CE CheckExists) bool {
+	// get pipelineID and table name
+	var status string
+	// get the table data with using pipeline ID
+	genQuery := fmt.Sprintf("SELECT status FROM %s WHERE id=%d", CE.TableName, CE.Id)
+	row := database.Db.QueryRow(genQuery)
+	switch err := row.Scan(&status); err {
+	case sql.ErrNoRows:
+		fmt.Printf("\n Updating new Pipeline %d .. ", CE.Id)
+		return true
+	case nil:
+		// if exists check for status , if status will be `Running` proceed to get the jobs data
+		if status == "Running" {
+			// if pipeline exists and status not in running state skip
+			fmt.Printf("\n Got %d existing pipeline update required", CE.Id)
+			return true
+		} else {
+			fmt.Printf("\n %d pipeline exists ", CE.Id)
+			return false
+		}
+	default:
+		return true
+	}
 }
