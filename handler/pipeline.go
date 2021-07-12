@@ -44,7 +44,7 @@ func GetPipelineDataAPI(w http.ResponseWriter, r *http.Request) {
 
 // GetPipelineData to get perticular pipeline data with jobs
 func GetPipelineData(pipe *PipeData, platform, branch, id string) error {
-	pipelineQuery := fmt.Sprintf("SELECT * FROM %s WHERE id=%s ;", fmt.Sprintf("%s_%s", platform, branch), id)
+	pipelineQuery := fmt.Sprintf("SELECT project,id,sha,ref,status,web_url,release_tag,created_at FROM %s WHERE id=%s ;", fmt.Sprintf("%s_%s", platform, branch), id)
 	glog.Infoln("\n \t %s \n", pipelineQuery)
 	row := database.Db.QueryRow(pipelineQuery)
 	pipelinedata := OpenshiftpipelineSummary{}
@@ -55,8 +55,6 @@ func GetPipelineData(pipe *PipeData, platform, branch, id string) error {
 		&pipelinedata.Ref,
 		&pipelinedata.Status,
 		&pipelinedata.WebURL,
-		&pipelinedata.OpenshiftPID,
-		&pipelinedata.LogURL,
 		&pipelinedata.ReleaseTag,
 		&pipelinedata.CreatedAt,
 	)

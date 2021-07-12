@@ -16,7 +16,7 @@ import (
 
 // QueryData fetches the builddashboard data from the db
 func QueryData(datas *Openshiftdashboard, pipelineTable string, jobsTable string) error {
-	pipelineQuery := fmt.Sprintf("SELECT * FROM %s ORDER BY id DESC LIMIT 20;", pipelineTable)
+	pipelineQuery := fmt.Sprintf("SELECT project,id,sha,ref,status,web_url,release_tag,created_at FROM %s ORDER BY id DESC LIMIT 20;", pipelineTable)
 	pipelinerows, err := database.Db.Query(pipelineQuery)
 	if err != nil {
 		return err
@@ -31,8 +31,6 @@ func QueryData(datas *Openshiftdashboard, pipelineTable string, jobsTable string
 			&pipelinedata.Ref,
 			&pipelinedata.Status,
 			&pipelinedata.WebURL,
-			&pipelinedata.OpenshiftPID,
-			&pipelinedata.LogURL,
 			&pipelinedata.ReleaseTag,
 			&pipelinedata.CreatedAt,
 		)
@@ -148,7 +146,7 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTag
 		}
 		if !CheckUpdateRequire(checkPipelinePresent) {
 			glog.Infoln("%d pipeline update not require", checkPipelinePresent.Id)
-			return
+			continue
 		}
 
 		pipelineJobsData, err := releasePipelineJobs(pipelineData[i].ID, token, project)
