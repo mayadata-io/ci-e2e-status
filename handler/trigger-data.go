@@ -131,7 +131,6 @@ func releasePipelineJobs(pipelineID int, token string, project string) (Jobs, er
 	return obj, nil
 }
 
-// openshiftCommit from gitlab api and store to database
 func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTagJob string) {
 	pipelineData, err := getPipelineData(token, project, branch)
 	if err != nil {
@@ -145,14 +144,14 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTag
 			TableName: pipelineTable,
 		}
 		if !CheckUpdateRequire(checkPipelinePresent) {
-			glog.Infoln("%d pipeline update not require", checkPipelinePresent.Id)
+			glog.Infof("%d pipeline update not require", checkPipelinePresent.Id)
 			continue
 		}
 
 		pipelineJobsData, err := releasePipelineJobs(pipelineData[i].ID, token, project)
 		if err != nil {
 			glog.Error(err)
-			return
+			continue
 		}
 		glog.Infoln("pipelieID :->  " + strconv.Itoa(pipelineData[i].ID) + " || JobSLegth :-> " + strconv.Itoa(len(pipelineJobsData)))
 		//check is releaseTag already exixts on pipelineTable

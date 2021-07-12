@@ -112,7 +112,7 @@ func CheckUpdateRequire(CE CheckExists) bool {
 		return true
 	case nil:
 		// if exists check for status , if status will be `Running` proceed to get the jobs data
-		if status == "Running" {
+		if status == "running" {
 			// if pipeline exists and status not in running state skip
 			fmt.Printf("\n Got %d existing pipeline update required", CE.Id)
 			return true
