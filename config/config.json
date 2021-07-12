@@ -32,7 +32,7 @@
                 },
                 {
                     "name": "jiva-operator",
-                    "releaseTagJob": "K9YC-OpenEBS"
+                    "releaseTagJob": "2IJO01-OpenEBS-Deploy"
                 },
                 {
                     "name": "openebs-jiva",
