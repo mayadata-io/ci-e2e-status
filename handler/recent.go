@@ -74,7 +74,7 @@ func HandleRecentPipelines(w http.ResponseWriter, r *http.Request) {
 
 // GetPipelineData to get perticular pipeline data with jobs
 func GetPipeline(pipe *PipeData, platform, branch string, pipeArray *[]PipeData) error {
-	pipelineQuery := fmt.Sprintf("SELECT * FROM %s WHERE id=(select max(id) from %s) ;", fmt.Sprintf("%s_%s", platform, branch), fmt.Sprintf("%s_%s", platform, branch))
+	pipelineQuery := fmt.Sprintf("SELECT project,id,sha,ref,status,web_url,release_tag,created_at FROM %s WHERE id=(select max(id) from %s) ;", fmt.Sprintf("%s_%s", platform, branch), fmt.Sprintf("%s_%s", platform, branch))
 	row := database.Db.QueryRow(pipelineQuery)
 	pipelinedata := OpenshiftpipelineSummary{}
 	err := row.Scan(
@@ -84,8 +84,6 @@ func GetPipeline(pipe *PipeData, platform, branch string, pipeArray *[]PipeData)
 		&pipelinedata.Ref,
 		&pipelinedata.Status,
 		&pipelinedata.WebURL,
-		&pipelinedata.OpenshiftPID,
-		&pipelinedata.LogURL,
 		&pipelinedata.ReleaseTag,
 		&pipelinedata.CreatedAt,
 	)
