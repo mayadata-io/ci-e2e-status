@@ -141,18 +141,22 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTag
 		return
 	}
 	for i := range pipelineData {
-		var logURL, imageTag, getURLString, createdAt string
+		var imageTag, getURLString, createdAt string
+		checkPipelinePresent := CheckExists{
+			Id:        pipelineData[i].ID,
+			TableName: pipelineTable,
+		}
+		if !CheckUpdateRequire(checkPipelinePresent) {
+			glog.Infoln("%d pipeline update not require", checkPipelinePresent.Id)
+			return
+		}
+
 		pipelineJobsData, err := releasePipelineJobs(pipelineData[i].ID, token, project)
 		if err != nil {
 			glog.Error(err)
 			return
 		}
 		glog.Infoln("pipelieID :->  " + strconv.Itoa(pipelineData[i].ID) + " || JobSLegth :-> " + strconv.Itoa(len(pipelineJobsData)))
-		if len(pipelineJobsData) != 0 {
-			jobStartedAt := pipelineJobsData[0].StartedAt
-			JobFinishedAt := pipelineJobsData[len(pipelineJobsData)-1].FinishedAt
-			logURL = Kibanaloglink(pipelineData[i].Sha, pipelineData[i].ID, pipelineData[i].Status, jobStartedAt, JobFinishedAt)
-		}
 		//check is releaseTag already exixts on pipelineTable
 		checkImageTag := VerifyImageTagExists(ImageTagCheck{pipelineTable, pipelineData[i].ID})
 		if checkImageTag == "NA" { //if tag not exists (NA) then check and fetch tag from jobLogs
@@ -167,8 +171,8 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTag
 			createdAt = pipelineJobsData[0].CreatedAt
 		}
 		// Add pipelines data to Database
-		sqlStatement := fmt.Sprintf("INSERT INTO %s (project, id, sha, ref, status, web_url, openshift_pid, kibana_url, release_tag, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"+
-			"ON CONFLICT (id) DO UPDATE SET status = $5, openshift_pid = $7, kibana_url = $8, release_tag = $9, created_at = $10 RETURNING id;", pipelineTable)
+		sqlStatement := fmt.Sprintf("INSERT INTO %s (project, id, sha, ref, status, web_url, openshift_pid, release_tag, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"+
+			"ON CONFLICT (id) DO UPDATE SET status = $5, openshift_pid = $7, release_tag = $8, created_at = $9 RETURNING id;", pipelineTable)
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
 			project,
@@ -178,7 +182,6 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTag
 			pipelineData[i].Status,
 			pipelineData[i].WebURL,
 			pipelineData[i].ID,
-			logURL,
 			imageTag,
 			createdAt,
 		).Scan(&id)
