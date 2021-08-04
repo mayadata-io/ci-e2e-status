@@ -24,7 +24,7 @@
                 },
                 {
                     "name": "openebs-cstor-csi",
-                    "releaseTagJob": "AAO9-CSTOR-OPERATOR"
+                    "releaseTagJob": "2ICO01-CSTOR-OPERATOR"
                 },
                 {
                     "name": "openebs-cstor",
