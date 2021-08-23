@@ -138,6 +138,10 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTag
 		return
 	}
 	for i := range pipelineData {
+		if pipelineData[i].Status == "skipped" {
+			glog.Infof("%d pipeline in skip state ", pipelineData[i].ID)
+			continue
+		}
 		var imageTag, getURLString, createdAt string
 		checkPipelinePresent := CheckExists{
 			Id:        pipelineData[i].ID,
