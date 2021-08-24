@@ -16,7 +16,7 @@ import (
 
 // QueryData fetches the builddashboard data from the db
 func QueryData(datas *Openshiftdashboard, pipelineTable string, jobsTable string) error {
-	pipelineQuery := fmt.Sprintf("SELECT project,id,sha,ref,status,web_url,release_tag,created_at FROM %s ORDER BY id DESC LIMIT 20;", pipelineTable)
+	pipelineQuery := fmt.Sprintf("SELECT project,id,sha,ref,status,web_url,release_tag,created_at,k8s_version FROM %s ORDER BY id DESC LIMIT 20;", pipelineTable)
 	pipelinerows, err := database.Db.Query(pipelineQuery)
 	if err != nil {
 		return err
@@ -33,6 +33,7 @@ func QueryData(datas *Openshiftdashboard, pipelineTable string, jobsTable string
 			&pipelinedata.WebURL,
 			&pipelinedata.ReleaseTag,
 			&pipelinedata.CreatedAt,
+			&pipelinedata.K8sVersion,
 		)
 		if err != nil {
 			return err
@@ -131,7 +132,7 @@ func releasePipelineJobs(pipelineID int, token string, project string) (Jobs, er
 	return obj, nil
 }
 
-func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTagJob string) {
+func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTagJob, k8sVersionJob string) {
 	pipelineData, err := getPipelineData(token, project, branch)
 	if err != nil {
 		glog.Error(err)
@@ -142,7 +143,7 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTag
 			glog.Infof("%d pipeline in skip state ", pipelineData[i].ID)
 			continue
 		}
-		var imageTag, getURLString, createdAt string
+		var imageTag, getURLString, createdAt, pipK8sVersion string
 		checkPipelinePresent := CheckExists{
 			Id:        pipelineData[i].ID,
 			TableName: pipelineTable,
@@ -157,6 +158,13 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTag
 			glog.Error(err)
 			continue
 		}
+		if !VerifyColumnDataExixts(ImageTagCheck{pipelineTable, pipelineData[i].ID}) {
+			pipK8sVersion, err = GrepFromRaw(pipelineJobsData, token, project, branch, k8sVersionJob)
+			if err != nil {
+				glog.Info("\nError : ", err)
+			}
+		}
+
 		glog.Infoln("pipelieID :->  " + strconv.Itoa(pipelineData[i].ID) + " || JobSLegth :-> " + strconv.Itoa(len(pipelineJobsData)))
 		//check is releaseTag already exixts on pipelineTable
 		checkImageTag := VerifyImageTagExists(ImageTagCheck{pipelineTable, pipelineData[i].ID})
@@ -172,8 +180,8 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTag
 			createdAt = pipelineJobsData[0].CreatedAt
 		}
 		// Add pipelines data to Database
-		sqlStatement := fmt.Sprintf("INSERT INTO %s (project, id, sha, ref, status, web_url, openshift_pid, release_tag, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"+
-			"ON CONFLICT (id) DO UPDATE SET status = $5, openshift_pid = $7, release_tag = $8, created_at = $9 RETURNING id;", pipelineTable)
+		sqlStatement := fmt.Sprintf("INSERT INTO %s (project, id, sha, ref, status, web_url, openshift_pid, release_tag, created_at, k8s_version) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"+
+			"ON CONFLICT (id) DO UPDATE SET status = $5, openshift_pid = $7, release_tag = $8, created_at = $9, k8s_version = $10 RETURNING id;", pipelineTable)
 		id := 0
 		err = database.Db.QueryRow(sqlStatement,
 			project,
@@ -185,6 +193,7 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTag
 			pipelineData[i].ID,
 			imageTag,
 			createdAt,
+			pipK8sVersion,
 		).Scan(&id)
 		if err != nil {
 			glog.Error(err)

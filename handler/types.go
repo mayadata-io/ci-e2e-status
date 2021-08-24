@@ -81,6 +81,7 @@ type OpenshiftpipelineSummary struct {
 	LogURL       string             `json:"kibana_url" `
 	ReleaseTag   string             `json:"release_tag"`
 	CreatedAt    string             `json:"created_at"`
+	K8sVersion   string             `json:"k8s_version"`
 	Jobs         []BuildJobssummary `json:"jobs"`
 }
 
