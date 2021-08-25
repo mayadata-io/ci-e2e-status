@@ -6,11 +6,13 @@
             "branches":[
                 {
                     "name": "release-branch",
-                    "releaseTagJob": "2P01-ZFS-LOCALPV-PROVISIONER-DEPLOY"
+                    "releaseTagJob": "2P01-ZFS-LOCALPV-PROVISIONER-DEPLOY",
+                    "k8sVersion": "1S01-KUBEADM-CLUSTER"
                 },
                 {
                     "name": "lvm-localpv",
-                    "releaseTagJob": "2P01-LVM-LOCALPV-PROVISIONER-DEPLOY"
+                    "releaseTagJob": "2P01-LVM-LOCALPV-PROVISIONER-DEPLOY",
+                    "k8sVersion": "1S01-KUBEADM-CLUSTER"
                 }
             ]
         },
@@ -20,23 +22,28 @@
             "branches":[
                 {
                     "name": "openebs-localpv",
-                    "releaseTagJob": "2LP01-OPENEBS-DEPLOY"
+                    "releaseTagJob": "2LP01-OPENEBS-DEPLOY",
+                    "k8sVersion": "1LS01-CLUSTER-SETUP"
                 },
                 {
                     "name": "openebs-cstor-csi",
-                    "releaseTagJob": "2ICO01-CSTOR-OPERATOR"
+                    "releaseTagJob": "1CCO01-cluster-setup",
+                    "k8sVersion": "1CCO01-openshift-cluster"
                 },
                 {
                     "name": "openebs-cstor",
-                    "releaseTagJob": "K9YC-OpenEBS"
+                    "releaseTagJob": "K9YC-OpenEBS",
+                    "k8sVersion": "PCZD-OpenShift"
                 },
                 {
                     "name": "jiva-operator",
-                    "releaseTagJob": "2IJO01-JIVA-OPERATOR"
+                    "releaseTagJob": "2IJO01-JIVA-OPERATOR",
+                    "k8sVersion": "1CJO01-Openshift"
                 },
                 {
                     "name": "openebs-jiva",
-                    "releaseTagJob": "2JP01-OPENEBS-DEPLOY"
+                    "releaseTagJob": "2JP01-OPENEBS-DEPLOY",
+                    "k8sVersion": "1JS01-OPENSHIFT-CLUSTER"
                 }
             ]
         },{
@@ -45,23 +52,28 @@
             "branches":[
                 {
                     "name": "jiva-operator",
-                    "releaseTagJob": "2IJO01-JIVA-OPERATOR"
+                    "releaseTagJob": "2IJO01-JIVA-OPERATOR",
+                    "k8sVersion": "1CJO01-Konvoy"
                 },
                 {
                     "name": "openebs-jiva",
-                    "releaseTagJob": "2JP01-OPENEBS-KONVOY-DEPLOY"
+                    "releaseTagJob": "2JP01-OPENEBS-KONVOY-DEPLOY",
+                    "k8sVersion": "1JS01-KONVOY-CLUSTER"
                 },
                 {
                     "name": "openebs-cstor-csi",
-                    "releaseTagJob": "2ICO01-CSTOR-OPERATOR"
+                    "releaseTagJob": "2ICO01-CSTOR-OPERATOR",
+                    "k8sVersion": "1CCO01-konvoy-cluster"
                 },
                 {
                     "name": "openebs-cstor",
-                    "releaseTagJob": "2IC01-OPENEBS-KONVOY-DEPLOY"
+                    "releaseTagJob": "2IC01-OPENEBS-KONVOY-DEPLOY",
+                    "k8sVersion": "1CC01-konvoy-cluster"
                 },
                 {
                     "name": "openebs-localpv",
-                    "releaseTagJob": "2LP01-OPENEBS-DEPLOY"
+                    "releaseTagJob": "2LP01-OPENEBS-DEPLOY",
+                    "k8sVersion": "1LS01-CLUSTER-SETUP"
                 }
             ]
         }
