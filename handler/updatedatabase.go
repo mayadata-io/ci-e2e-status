@@ -18,10 +18,10 @@ func UpdateDatabase(gitlab config.Config) {
 	if !ok {
 		glog.Fatalf("TOKEN environment variable required")
 	}
-	update(gitlab, token)
+	go update(gitlab, token)
 	tick := time.Tick(10 * time.Minute)
 	for range tick {
-		update(gitlab, token)
+		go update(gitlab, token)
 	}
 }
 
