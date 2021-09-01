@@ -40,11 +40,16 @@ func VerifyColumnDataExixts(t ImageTagCheck) bool {
 	var columnData string
 	query := fmt.Sprintf("SELECT k8s_version FROM %s WHERE id=%d", t.TableName, t.JobID)
 	row := database.Db.QueryRow(query)
-	switch err := row.Scan(&columnData); err {
+	err := row.Scan(&columnData)
+	switch err {
 	case sql.ErrNoRows:
 		fmt.Printf("\nNo rows were returned for %s table of %d jobID \n", t.TableName, t.JobID)
 		return false
 	case nil:
+		fmt.Printf("\n\n\n\t\t\t K8s_version Column:%s,<--", columnData)
+		if columnData == "" {
+			return false
+		}
 		return true
 	default:
 		fmt.Println(err)
