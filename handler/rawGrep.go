@@ -62,8 +62,13 @@ func GrepFromRaw(jobsData Jobs, token, project, branch, jobName string) (string,
 	// glog.Infoln(fmt.Sprintf("\n platform : %s \n branch : %s \n jobName : %s \n", project, branch, jobName))
 	for _, job := range jobsData {
 		if job.Name == jobName {
-			jobURL = job.WebURL + "/raw"
+			if job.Status == "success" || job.Status == "failed" {
+				jobURL = job.WebURL + "/raw"
+			}
 		}
+	}
+	if jobURL == "" {
+		return "NA", nil
 	}
 	req, err := http.NewRequest("GET", jobURL, nil)
 	if err != nil {

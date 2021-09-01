@@ -18,10 +18,10 @@ func UpdateDatabase(gitlab config.Config) {
 	if !ok {
 		glog.Fatalf("TOKEN environment variable required")
 	}
-	go update(gitlab, token)
+	update(gitlab, token)
 	tick := time.Tick(10 * time.Minute)
 	for range tick {
-		go update(gitlab, token)
+		update(gitlab, token)
 	}
 }
 
@@ -31,7 +31,7 @@ func update(gitLab config.Config, token string) {
 			branchFormat := strings.Replace(branch.Name, "-", "_", -1)
 			pipelineTable := fmt.Sprintf("%s_%s", project.Name, branchFormat)
 			pipelineJobTable := fmt.Sprintf("%s_jobs", pipelineTable)
-			getPlatformData(token, project.ID, branch.Name, pipelineTable, pipelineJobTable, branch.ReleaseTagJob, branch.K8sVersion)
+			go getPlatformData(token, project.ID, branch.Name, pipelineTable, pipelineJobTable, branch.ReleaseTagJob, branch.K8sVersion)
 		}
 	}
 }
