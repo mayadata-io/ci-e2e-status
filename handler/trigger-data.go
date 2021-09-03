@@ -144,14 +144,14 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTag
 			continue
 		}
 		var imageTag, getURLString, createdAt, pipK8sVersion string
-		// checkPipelinePresent := CheckExists{
-		// 	Id:        pipelineData[i].ID,
-		// 	TableName: pipelineTable,
-		// }
-		// if !CheckUpdateRequire(checkPipelinePresent) {
-		// 	glog.Infof("%d pipeline update not require", checkPipelinePresent.Id)
-		// 	continue
-		// }
+		checkPipelinePresent := CheckExists{
+			Id:        pipelineData[i].ID,
+			TableName: pipelineTable,
+		}
+		if !CheckUpdateRequire(checkPipelinePresent) {
+			glog.Infof("%d pipeline update not require", checkPipelinePresent.Id)
+			continue
+		}
 
 		pipelineJobsData, err := releasePipelineJobs(pipelineData[i].ID, token, project)
 		if err != nil {
