@@ -158,12 +158,12 @@ func getPlatformData(token, project, branch, pipelineTable, jobTable, releaseTag
 			glog.Error(err)
 			continue
 		}
-		if !VerifyColumnDataExixts(ImageTagCheck{pipelineTable, pipelineData[i].ID}) {
-			pipK8sVersion, err = GrepFromRaw(pipelineJobsData, token, project, branch, k8sVersionJob)
-			if err != nil {
-				glog.Info("\nError : ", err)
-			}
+		// if !VerifyColumnDataExixts(ImageTagCheck{pipelineTable, pipelineData[i].ID}) {
+		pipK8sVersion, err = GrepFromRaw(pipelineJobsData, token, project, branch, k8sVersionJob)
+		if err != nil {
+			glog.Info("\nError : ", err)
 		}
+		// }
 
 		glog.Infoln("pipelieID :->  " + strconv.Itoa(pipelineData[i].ID) + " || JobSLegth :-> " + strconv.Itoa(len(pipelineJobsData)))
 		//check is releaseTag already exixts on pipelineTable
