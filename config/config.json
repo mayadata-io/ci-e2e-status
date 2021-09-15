@@ -13,6 +13,11 @@
                     "name": "lvm-localpv",
                     "releaseTagJob": "2P01-LVM-LOCALPV-PROVISIONER-DEPLOY",
                     "k8sVersion": "1S01-KUBEADM-CLUSTER"
+                },
+                {
+                    "name": "device-localpv",
+                    "releaseTagJob": "2P01-DEVICE-LOCALPV-PROVISIONER-DEPLOY",
+                    "k8sVersion": "1S01-KUBEADM-CLUSTER"
                 }
             ]
         },
