@@ -32,7 +32,7 @@
                 },
                 {
                     "name": "openebs-cstor-csi",
-                    "releaseTagJob": "1CCO01-cluster-setup",
+                    "releaseTagJob": "2ICO01-CSTOR-OPERATOR",
                     "k8sVersion": "1CCO01-openshift-cluster"
                 },
                 {
